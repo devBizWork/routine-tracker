@@ -10,8 +10,14 @@ source of truth for layout, copy, spacing, colors and states. Match them closely
   Anything visible but not yet built shows a small "Coming soon" note. No dead taps.
 - Before coding, list the files you will create or change and the checks you will run.
 - After coding, run: type check, lint, unit tests, production build. Fix failures first.
-- Finish every step with: what changed, how to test it on my iPhone in plain numbered steps,
-  and the git commands to commit and tag it (git tag step-N).
+- Work on a branch named step-N (never commit straight to main). Finish every step by
+  committing, pushing the branch and opening a pull request with `gh pr create` whose
+  description says what changed and how to test it. I click Merge on GitHub myself; merging
+  deploys the live site. Do not merge for me unless I say so. After I merge, give me the
+  commands to update main and tag it (git tag step-N, then git push origin step-N).
+- Finish every step with: what changed, how to test it on my iPhone in plain numbered steps
+  (the live site is the test site, so these steps are for after the merge deploys), and the
+  pull request link.
 - Update PROGRESS.md at the end of every step: steps done, known bugs, decisions made.
 - I am not a professional developer. Explain in plain words and give me every command.
 - Check current docs before using a library; versions change. Ask before adding any
