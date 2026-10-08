@@ -14,7 +14,9 @@ source of truth for layout, copy, spacing, colors and states. Match them closely
   committing, pushing the branch and opening a pull request with `gh pr create` whose
   description says what changed and how to test it. I click Merge on GitHub myself; merging
   deploys the live site. Do not merge for me unless I say so. After I merge, give me the
-  commands to update main and tag it (git tag step-N, then git push origin step-N).
+  commands to update main and tag it (git checkout main, git pull, git tag step-N, then
+  `git push origin tag step-N`; the word `tag` is needed because the branch and the tag
+  share a name). Tell me clearly that the tag must wait until after I have merged.
 - Finish every step with: what changed, how to test it on my iPhone in plain numbered steps
   (the live site is the test site, so these steps are for after the merge deploys), and the
   pull request link.

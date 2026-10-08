@@ -72,14 +72,18 @@ Changes go to `main` through a pull request, not by pushing straight to `main`:
 2. Open the pull request on GitHub (or with `gh pr create`), read the description, and click
    **Merge pull request** when the checks are green.
 3. Merging starts the **Deploy to GitHub Pages** workflow, which updates the live site.
-4. Afterwards, update your computer and tag the step:
+4. **Only after the merge is done**, update your computer and tag the step. The tag goes on
+   the merged `main`, so do not run these before you have clicked Merge:
 
    ```bash
    git checkout main
    git pull
    git tag step-3
-   git push origin step-3
+   git push origin tag step-3
    ```
+
+   The word `tag` in the last line matters: the branch and the tag have the same name
+   (`step-3`), and without it Git says "matches more than one" and refuses.
 
 ### If you name the repository something else
 
