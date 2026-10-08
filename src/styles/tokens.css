@@ -1,0 +1,122 @@
+/* Design tokens: every color, radius and font size lives here.
+   Colors are Option Z, "Summer at the Pool", mapped by role from the purple screens
+   (see CLAUDE.md). Radii and font sizes are named after their pixel size so they match
+   the screens one to one (a half pixel is written with a dash: 12-5 is 12.5px).
+
+   `@theme static` makes Tailwind emit all of these as real CSS variables
+   (var(--color-ground), var(--radius-14)...) and as classes (bg-ground, rounded-14, text-13). */
+
+@theme static {
+  /* ---- Colors ---- */
+  --color-*: initial;
+
+  --color-ground: #f2fafc; /* page background */
+  --color-card: #ffffff; /* cards, sheets, tab bar */
+  --color-ink: #0e1a20; /* text, titles */
+  --color-muted: #4e6670; /* secondary text */
+  --color-line: #dff0f4; /* borders */
+  --color-line-strong: #d3e9ef; /* stronger borders */
+
+  --color-primary: #0b6e99; /* pool blue: actions, Followed, actual bars, now line */
+  --color-on-primary: #ffffff; /* text and icons on primary */
+  --color-pill: #d6f3f7; /* active tab pill, selected states */
+  --color-followed: var(--color-primary);
+
+  --color-missed: #f28a3c; /* Missed */
+  --color-missed-text: #b4501c; /* small orange text (keeps contrast) */
+
+  --color-unknown-stripe-a: #dcedf1; /* Unknown stripes */
+  --color-unknown-stripe-b: #f8fcfd;
+  --color-unknown-edge: #8aa6ae; /* dashed edge */
+  --color-unknown-line: #cbe2e8; /* border of the Unknown swatch */
+
+  --color-now-fill: #d9f4f8; /* Now card */
+  --color-now-border: #b5e4ec;
+  --color-now-track: #ffffff; /* progress track on the Now card */
+
+  --color-aqua: #2ec4d6; /* accents, used sparingly */
+  --color-sunshine: #ffd166;
+
+  /* Task categories (text on them is ink) */
+  --color-cat-movement: #e4f5cf;
+  --color-cat-focus: #d8e8fb;
+  --color-cat-admin: #fff0c2;
+  --color-cat-meetings: #ffdfd6;
+  --color-cat-planning: #d2f3f6;
+  --color-cat-personal: #fbe2ee;
+
+  /* ---- Fonts ---- */
+  --font-sans: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* ---- Radii used in the screens ---- */
+  --radius-*: initial;
+
+  --radius-1: 1px;
+  --radius-2: 2px;
+  --radius-3: 3px;
+  --radius-4: 4px;
+  --radius-5: 5px;
+  --radius-6: 6px;
+  --radius-7: 7px;
+  --radius-8: 8px;
+  --radius-9: 9px;
+  --radius-10: 10px;
+  --radius-11: 11px;
+  --radius-12: 12px;
+  --radius-13: 13px;
+  --radius-14: 14px;
+  --radius-15: 15px;
+  --radius-16: 16px;
+  --radius-17: 17px;
+  --radius-18: 18px;
+  --radius-20: 20px;
+  --radius-22: 22px;
+  --radius-24: 24px;
+  --radius-26: 26px;
+  --radius-27: 27px;
+  --radius-28: 28px;
+  --radius-30: 30px;
+  --radius-34: 34px;
+  --radius-full: 9999px;
+
+  /* ---- Font sizes used in the screens ---- */
+  --text-*: initial;
+
+  --text-9-5: 9.5px;
+  --text-10: 10px;
+  --text-10-5: 10.5px;
+  --text-11: 11px;
+  --text-11-5: 11.5px;
+  --text-12: 12px;
+  --text-12-5: 12.5px;
+  --text-13: 13px;
+  --text-13-5: 13.5px;
+  --text-14: 14px;
+  --text-14-5: 14.5px;
+  --text-15: 15px;
+  --text-15-5: 15.5px;
+  --text-16: 16px; /* smallest size allowed in an input, so iOS does not zoom */
+  --text-17: 17px;
+  --text-19: 19px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-27: 27px;
+  --text-28: 28px;
+  --text-29: 29px;
+  --text-30: 30px;
+  --text-32: 32px;
+  --text-34: 34px;
+  --text-42: 42px;
+  --text-48: 48px;
+  --text-50: 50px;
+}
+
+/* iPhone safe areas (notch, home indicator). Zero on screens without them. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}

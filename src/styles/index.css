@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+@import './tokens.css';
+@import './fonts.css';
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    /* Times and scores line up in columns */
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    /* The app scrolls inside its own container; the page itself never bounces */
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
