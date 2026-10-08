@@ -3,7 +3,18 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
-- **Step 1:** project setup, app shell and live link (this step). Tag: `step-1`.
+- **Step 2:** on-device database and the rules that turn tasks into a day's plan. Tag: `step-2`.
+  - `src/data/`: Dexie database (`tasks`, `occurrences`, `settings`, plus internal `days` and
+    `meta` tables), default settings on first launch, and the API the screens use. Screens
+    import from `../data` only (`getDay`, `listTasks`, `createTask`, `updateTask`,
+    `deleteTask`, `updateOccurrence`, `getSettings`, `updateSettings`, ...).
+  - Repeat rules in `repeat.ts`: once, daily, weekdays (Mon-Fri), custom days, limited to
+    `activeFrom`..`activeTo` (both days included); inbox tasks never appear on a day.
+  - Storage persistence is requested on every launch and the answer is saved.
+  - Developer section in Settings (tap "Version" 5 times, quickly): counts, storage state, day
+    inspector, Load sample data (14 tasks + 7 logged days), Erase all data (with confirm).
+  - 119 unit tests, including the real database code run against a simulated IndexedDB.
+- **Step 1:** project setup, app shell and live link. Tag: `step-1`.
   - Vite + React + TypeScript (strict) + Tailwind + React Router (HashRouter) + ESLint + Vitest.
   - `src/styles/tokens.css`: Option Z colors, every radius and font size from the screens,
     safe-area variables. Bricolage Grotesque and Nunito Sans are bundled in `src/assets/fonts`.
@@ -16,8 +27,15 @@
 
 ## Known bugs / not yet verified
 
-- Not yet tried on a real iPhone, in the Home Screen app, or in airplane mode. Do the
-  walkthrough from the Step 1 hand-off and note anything odd here.
+- Step 1 checked on a real iPhone: live site opens, Add to Home Screen works. Airplane mode
+  was part of the walkthrough; no problems were reported.
+- Step 2 was tested by the user: Storage said "Persistent" and the Developer section worked
+  as expected. NOT yet confirmed which device that was (the code was not yet deployed when
+  this was reported), so repeat on the iPhone Home Screen app after the Step 2 deploy.
+  Chrome-style desktop browsers often say "Not persistent"; that is the browser's choice.
+- After a new version is deployed, the first open of the app can still show the old version
+  (the saved offline copy); it updates itself, so close and open the app once more.
+- A block that runs past midnight is not handled (times are "HH:mm" within one day).
 - The app icons are placeholders (a clock drawn by `scripts/generate-icons.mjs`).
 - No component tests yet: they need `jsdom` and `@testing-library/react`, which are not in the
   approved stack. Ask before adding them.
@@ -42,6 +60,46 @@
   bar), which suits the light theme. The theme and background colors are the ground color.
 - **Service worker updates itself** (`registerType: autoUpdate`). Revisit when screens with
   unsaved typing exist, so an update never interrupts an edit.
+- **Added dependencies (approved):** `dexie`, `date-fns` (both in the stack), and
+  `fake-indexeddb` (test-only, so tests can run the real database code).
+- **Days are created once, then stored.** `getDay(date)` creates a date's blocks the first time
+  and records it in the `days` table. After that the day is only read, so a task made later
+  never shows up on a day that already exists, and a block deleted from one day is not
+  re-created. Task changes reach existing days only through `syncFutureDays` in `api.ts`.
+- **A task change applies from today onward, never to earlier dates.** On create, update or
+  delete, days from today on are brought in line: unlogged blocks follow the change (or are
+  removed if the task no longer applies), blocks that already have a log (status, times, timer
+  or note) are left alone, and a field changed on one day only is kept unless it still matched
+  the task's old value. "Apply from a chosen later date" (needs splitting a routine in two)
+  is left for the Add/Edit sheet step.
+- **A repeating task starts today** (`activeFrom` defaults to today) so it cannot reach into
+  days that have already happened. A one-off with a time but no date gets today's date.
+- **`color` stores the category id** (`movement`, `focus`, ...), not a hex code, so the colors
+  stay in `tokens.css`. The sample tasks are placed in the closest category by name.
+- **Settings defaults** follow the Settings screen: sounds on, chime Bamboo, 5-minute warning on,
+  end sound off, quiet hours on 10:00 pm to 7:00 am, keep screen on off, day 5:00 am to 11:00 pm,
+  12-hour time, tolerances 10 min / 10% / 60 min.
+- **`meta` table:** small per-device notes (Developer section on/off, storage result). Not part
+  of future backups and kept when you press "Erase all data".
+- **Five taps** on Version must follow one another within 3 seconds, and a small hint shows
+  how many taps are left.
+- **Database changes later:** add `this.version(2)` in `src/data/db.ts`; never edit version 1.
+- **Network lock (added after Step 2, on request).** The built page carries a Content Security
+  Policy (`config/security.ts`, added by a build-only step in `vite.config.ts`) with
+  `connect-src 'none'`: the browser refuses any fetch, beacon or socket from the app, even to
+  this site, so no code (ours, a library, or a future mistake) can send data anywhere. Only our
+  own scripts, styles, images and fonts load. The service worker is not covered by the page's
+  rule; it only saves this site's own files. Tested in a browser: outside and same-site
+  requests are blocked, the app, database, fonts and offline copy all still work, and the app
+  opens with the server turned off. The dev server does not get the lock (it needs extra
+  permissions to reload on save), so `npm run dev` behaves as before.
+  **If a later step genuinely needs the network (it should not), this setting is where it
+  would have to be loosened, on purpose.**
+- **Limits of that lock:** it cannot stop other sites under the same `devbizwork.github.io`
+  address from reading this database (same "building"), or anyone using your unlocked phone.
+  Only publish code you trust under this GitHub account.
+- `.gitignore` also ignores `routine-backup-*.json` and `routine-*.csv`, so exported backups
+  are never committed to the public repository.
 - **Repository name lives in one place:** `REPO_NAME` in `config/app.config.ts`.
 - `.gitattributes` forces LF line endings (removes the Windows LF/CRLF warnings).
   `.gitignore` also ignores `dev-dist`, `*.local` and `.claude/`.

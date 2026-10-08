@@ -4,3 +4,7 @@ dev-dist
 .DS_Store
 *.local
 .claude/
+
+# Your own data: backups and exports must never be committed to the public repository
+routine-backup-*.json
+routine-*.csv
