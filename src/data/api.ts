@@ -280,6 +280,11 @@ export function createDataApi(options: DataApiOptions = {}) {
     }
   }
 
+  /** Reads the settings without ever writing, so screens can follow them with useLiveQuery. */
+  async function readSettings(): Promise<Settings> {
+    return withDefaults((await db.settings.get(SETTINGS_KEY)) ?? {})
+  }
+
   async function getSettings(): Promise<Settings> {
     return db.transaction('rw', db.settings, async () => {
       const row = await db.settings.get(SETTINGS_KEY)
@@ -395,6 +400,7 @@ export function createDataApi(options: DataApiOptions = {}) {
     peekDay,
     updateOccurrence,
     getSettings,
+    readSettings,
     updateSettings,
     getMeta,
     setMeta,
