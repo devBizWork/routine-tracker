@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import './tokens.css';
 @import './fonts.css';
+@import './sheet.css';
 
 @layer base {
   html,

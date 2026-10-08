@@ -19,6 +19,7 @@ export const {
   peekDay,
   updateOccurrence,
   getSettings,
+  readSettings,
   updateSettings,
   getMeta,
   setMeta,
@@ -32,8 +33,17 @@ export const {
 
 export { DEVELOPER_VISIBLE_KEY, createDataApi, isUnlogged } from './api'
 export type { DataApi, NewTask, OccurrencePatch, SettingsPatch, TaskPatch } from './api'
-export { CATEGORIES, DEFAULT_CATEGORY } from './categories'
+export { CATEGORIES, DEFAULT_CATEGORY, categoryColor } from './categories'
 export { addDays, dayOfWeek, isDateKey, parseDateKey, toDateKey } from './dates'
+export {
+  formatDateLabel,
+  formatDuration,
+  formatMinutesAsTime,
+  formatRepeat,
+  formatTime,
+  type TimeFormat,
+} from './format'
+export { findOverlaps, overlapMessage } from './overlap'
 export { occursOn } from './repeat'
 export { isTimeOfDay, minutesToTime, timeToMinutes } from './time'
 export { DataError } from './validate'

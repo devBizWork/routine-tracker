@@ -3,6 +3,20 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 3:** the Tasks tab and creating new tasks. Tag: `step-3` (added after the merge).
+  - Tasks screen as designed: title with the task count; Inbox, Routines and One-off sections
+    (rows show title, repeat label or date, start time and duration); the round + button.
+  - Inbox quick add: type and press Return; empty or spaces-only text does nothing.
+  - "New block" sheet: Title (autofocus), Start (native time picker), Duration (5 to 480 min in
+    5-minute steps, plus quick chips) or End ("Set end time instead", kept in sync), Repeat
+    (Once with a date, Daily, Weekdays, Custom with day buttons), Category, Notes, and a
+    "Chime for this task" row marked Coming soon. Save needs a title and a start time.
+  - Overlap warning ("Overlaps Deep work") that still lets you save.
+  - Cancel / swipe down / backdrop tap / Escape ask "Discard this block?" only if something
+    was typed or chosen.
+  - Tapping a task row, Schedule, or swiping hints shows "Coming soon" (Step 4).
+  - Reusable pieces for later steps: `BottomSheet`, `ComingSoonToast`, `useLiveQuery`.
+  - New tests: form rules (`draft.test.ts`), overlaps, formatting. 174 tests in all.
 - **Step 2:** on-device database and the rules that turn tasks into a day's plan. Tag: `step-2`.
   - `src/data/`: Dexie database (`tasks`, `occurrences`, `settings`, plus internal `days` and
     `meta` tables), default settings on first launch, and the API the screens use. Screens
@@ -40,6 +54,11 @@
   yet known. The panel now opens the moment the fifth tap lands (it no longer waits for the
   database) and shows a red notice with the real error if the database cannot be read. After
   the next deploy, open it in Edge and record the message here.
+- **Step 3 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px only.
+  Things only the iPhone can confirm: (1) tapping Start, End, Date or Duration opens the
+  phone's own wheel picker (they are invisible native fields laid over the drawn boxes);
+  (2) the keyboard and the sheet get along (Save is at the top, so it stays reachable);
+  (3) the swipe-down feel; (4) nothing sits under the home indicator.
 - A block that runs past midnight is not handled (times are "HH:mm" within one day).
 - The app icons are placeholders (a clock drawn by `scripts/generate-icons.mjs`).
 - No component tests yet: they need `jsdom` and `@testing-library/react`, which are not in the
@@ -89,6 +108,21 @@
 - **Five taps** on Version must follow one another within 3 seconds, and a small hint shows
   how many taps are left.
 - **Database changes later:** add `this.version(2)` in `src/data/db.ts`; never edit version 1.
+- **Step 3 design choices.**
+  - **Tap targets are 44 px**, a little larger than the screens in a few places (day buttons,
+    quick-duration chips, Repeat segments and Save were 38 to 40 px) to follow the 44 px rule.
+  - **Native pickers:** Start, End, Date and Duration are real `<input type="time">`,
+    `<input type="date">` and `<select>` elements, invisible and laid over the drawn boxes, so the
+    text shown follows the 12/24-hour setting while the phone's own picker does the picking.
+  - **End time is rounded to the nearest 5 minutes** (so the Duration picker can always show it);
+    a block cannot run past 11:59 pm (midnight is not supported yet).
+  - **A new block starts as Once, today, 30 min, category Focus.** Custom starts from the days
+    that were showing; tapping a day on Daily or Weekdays switches to Custom with that day flipped.
+  - **Inbox quick-add tasks** are Once, 30 minutes, category Focus, with no start time.
+  - **Durations from 2 hours up** are written as hours ("2 h 15 min") in rows and the picker.
+  - **One-off caption** reads "Swiping: coming soon" instead of "Swipe a row for more" (Step 4).
+  - **`readSettings`** is a read-only way to follow settings from a screen (the existing
+    `getSettings` writes when settings are missing, which a live query may not do).
 - **Network lock (added after Step 2, on request).** The built page carries a Content Security
   Policy (`config/security.ts`, added by a build-only step in `vite.config.ts`) with
   `connect-src 'none'`: the browser refuses any fetch, beacon or socket from the app, even to

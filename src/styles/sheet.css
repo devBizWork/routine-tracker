@@ -1,0 +1,40 @@
+/* Bottom sheet motion. The sheet slides up when it appears and down when it closes.
+   (fill-mode "backwards" so the closing slide, set in data-closing, is not overridden.) */
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheet {
+  animation: sheet-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  transition: transform 240ms ease-in;
+}
+
+.sheet[data-closing='true'] {
+  transform: translateY(100%);
+}
+
+.scrim {
+  animation: scrim-in 240ms ease-out backwards;
+  transition: opacity 240ms ease-in;
+}
+
+.scrim[data-closing='true'] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .scrim {
+    animation: none;
+    transition: none;
+  }
+}

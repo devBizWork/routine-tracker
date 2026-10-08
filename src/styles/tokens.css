@@ -37,6 +37,10 @@
   --color-aqua: #2ec4d6; /* accents, used sparingly */
   --color-sunshine: #ffd166;
 
+  /* Bottom sheets: the dimmed screen behind, and the hint of the screen peeking above */
+  --color-scrim: rgb(14 26 32 / 0.6);
+  --color-sheet-peek: rgb(242 250 252 / 0.28);
+
   /* Task categories (text on them is ink) */
   --color-cat-movement: #e4f5cf;
   --color-cat-focus: #d8e8fb;
@@ -79,6 +83,10 @@
   --radius-30: 30px;
   --radius-34: 34px;
   --radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --shadow-fab: 0 10px 24px rgb(11 110 153 / 0.32); /* the round + button */
+  --shadow-segment: 0 1px 3px rgb(14 26 32 / 0.14); /* selected segment of a switch */
 
   /* ---- Font sizes used in the screens ---- */
   --text-*: initial;

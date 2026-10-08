@@ -12,6 +12,11 @@ export const CATEGORIES: readonly { id: CategoryId; name: string }[] = [
 
 export const DEFAULT_CATEGORY: CategoryId = 'focus'
 
+/** The CSS color of a category, for style={{ background: ... }}. */
+export function categoryColor(id: CategoryId): string {
+  return `var(--color-cat-${id})`
+}
+
 export function isCategoryId(value: unknown): value is CategoryId {
   return CATEGORIES.some((c) => c.id === value)
 }
