@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import {
   counts,
   eraseAllData,
@@ -12,7 +12,7 @@ import {
   today,
   type Occurrence,
 } from '../../data'
-import { useLiveQuery } from '../../data/useLiveQuery'
+import { useLiveQuery, useLiveQueryResult } from '../../data/useLiveQuery'
 
 // A plain tool for checking the data while the real screens are built. It is hidden
 // until "Version" is tapped 5 times (see SettingsPage).
@@ -212,8 +212,31 @@ function Confirm({
   )
 }
 
+/** Says out loud when the database cannot be read, instead of showing dashes forever. */
+function DatabaseProblem({ error, waiting }: { error: Error | undefined; waiting: boolean }) {
+  const [stalled, setStalled] = useState(false)
+
+  useEffect(() => {
+    if (!waiting) return
+    const timer = setTimeout(() => setStalled(true), 4000)
+    return () => {
+      clearTimeout(timer)
+      setStalled(false)
+    }
+  }, [waiting])
+
+  if (!error && !(waiting && stalled)) return null
+  return (
+    <p role="alert" className="m-0 border-b border-line bg-cat-meetings px-4 py-3 text-13 font-semibold text-ink">
+      {error
+        ? `The database could not be read: ${error.name}: ${error.message}`
+        : 'The database is not answering. Close the app completely and open it again.'}
+    </p>
+  )
+}
+
 function StoredData() {
-  const totals = useLiveQuery(counts)
+  const { value: totals, error } = useLiveQueryResult(counts)
   const persistence = useLiveQuery(getStoragePersistence)
 
   const storage = !persistence
@@ -226,6 +249,7 @@ function StoredData() {
 
   return (
     <Card>
+      <DatabaseProblem error={error} waiting={totals === undefined} />
       <div>
         <Row label="Tasks">
           <span className="text-15 font-bold">{totals?.tasks ?? '–'}</span>

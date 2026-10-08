@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { PageHeader } from '../app/PageHeader'
 import { APP_VERSION } from '../app/version'
 import { DEVELOPER_VISIBLE_KEY, getMeta, setMeta } from '../data'
-import { useLiveQuery } from '../data/useLiveQuery'
 import { DeveloperSection } from './settings/DeveloperSection'
 
 const TAPS_NEEDED = 5
@@ -10,9 +9,24 @@ const TAPS_NEEDED = 5
 const TAP_WINDOW_MS = 3000
 
 export function SettingsPage() {
-  // Remembered on this device (in the database's per-device notes).
-  const stored = useLiveQuery(useCallback(() => getMeta<boolean>(DEVELOPER_VISIBLE_KEY), []))
-  const developerVisible = stored === true
+  // Whether the Developer section is showing. It changes the moment the fifth tap lands
+  // (it never waits for the database) and is remembered on this device afterwards.
+  const [developerVisible, setDeveloperVisible] = useState(false)
+  const [rememberError, setRememberError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let stale = false
+    getMeta<boolean>(DEVELOPER_VISIBLE_KEY)
+      .then((remembered) => {
+        if (!stale && remembered === true) setDeveloperVisible(true)
+      })
+      .catch(() => {
+        // The Developer section itself reports database problems once it is open.
+      })
+    return () => {
+      stale = true
+    }
+  }, [])
 
   const taps = useRef({ count: 0, last: 0 })
   const [hint, setHint] = useState<string | null>(null)
@@ -33,7 +47,14 @@ export function SettingsPage() {
     if (t.count >= TAPS_NEEDED) {
       t.count = 0
       setHint(null)
-      void setMeta(DEVELOPER_VISIBLE_KEY, !developerVisible)
+      const next = !developerVisible
+      setDeveloperVisible(next)
+      setRememberError(null)
+      setMeta(DEVELOPER_VISIBLE_KEY, next).catch((error: unknown) => {
+        setRememberError(
+          `Could not remember this on the device: ${error instanceof Error ? error.message : String(error)}`,
+        )
+      })
     } else if (t.count >= 2) {
       const left = TAPS_NEEDED - t.count
       setHint(`${left} more ${left === 1 ? 'tap' : 'taps'} to ${developerVisible ? 'hide' : 'show'} Developer`)
@@ -52,8 +73,8 @@ export function SettingsPage() {
         >
           Version {APP_VERSION}
         </button>
-        <p className="m-0 h-4 text-11-5 font-medium text-muted" role="status">
-          {hint}
+        <p className="m-0 min-h-4 px-6 text-center text-11-5 font-medium text-muted" role="status">
+          {rememberError ?? hint}
         </p>
       </div>
     </div>

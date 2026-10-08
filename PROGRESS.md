@@ -35,6 +35,11 @@
   Chrome-style desktop browsers often say "Not persistent"; that is the browser's choice.
 - After a new version is deployed, the first open of the app can still show the old version
   (the saved offline copy); it updates itself, so close and open the app once more.
+- **Developer panel did not open in Microsoft Edge on the computer, but did on the iPhone**
+  (reported after the Step 2 deploy; the tap hint showed but the panel did not). Cause not
+  yet known. The panel now opens the moment the fifth tap lands (it no longer waits for the
+  database) and shows a red notice with the real error if the database cannot be read. After
+  the next deploy, open it in Edge and record the message here.
 - A block that runs past midnight is not handled (times are "HH:mm" within one day).
 - The app icons are placeholders (a clock drawn by `scripts/generate-icons.mjs`).
 - No component tests yet: they need `jsdom` and `@testing-library/react`, which are not in the
