@@ -105,6 +105,11 @@
   Only publish code you trust under this GitHub account.
 - `.gitignore` also ignores `routine-backup-*.json` and `routine-*.csv`, so exported backups
   are never committed to the public repository.
+- **Pull request per step (from now on).** Each step is built on a branch `step-N`, pushed,
+  and opened as a pull request. `.github/workflows/ci.yml` runs type check, lint, tests and
+  build on the PR; merging to `main` is what deploys the live site (`deploy.yml`). The
+  merge is clicked by you; the step tag is added after the merge. Steps 0 to 2 were committed
+  straight to `main` before this rule.
 - **Repository name lives in one place:** `REPO_NAME` in `config/app.config.ts`.
 - `.gitattributes` forces LF line endings (removes the Windows LF/CRLF warnings).
   `.gitignore` also ignores `dev-dist`, `*.local` and `.claude/`.

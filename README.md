@@ -63,6 +63,24 @@ First time only:
 
 After that, every `git push` to `main` updates the live site by itself.
 
+### Making a change (pull requests)
+
+Changes go to `main` through a pull request, not by pushing straight to `main`:
+
+1. Work on a branch (for example `step-3`) and push it. The **Checks** workflow runs on the
+   pull request and shows a green tick or a red cross next to it.
+2. Open the pull request on GitHub (or with `gh pr create`), read the description, and click
+   **Merge pull request** when the checks are green.
+3. Merging starts the **Deploy to GitHub Pages** workflow, which updates the live site.
+4. Afterwards, update your computer and tag the step:
+
+   ```bash
+   git checkout main
+   git pull
+   git tag step-3
+   git push origin step-3
+   ```
+
 ### If you name the repository something else
 
 The folder name in the web address comes from the repository name. If you use a different
