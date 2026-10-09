@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateLabel, formatDuration, formatMinutesAsTime, formatRepeat, formatTime } from './format'
+import { formatDateLabel, formatDay, formatDuration, formatMinutesAsTime, formatRepeat, formatTime } from './format'
 
 describe('formatTime', () => {
   it('writes 12-hour times like the designs', () => {
@@ -60,5 +60,16 @@ describe('formatDateLabel', () => {
   it('writes other days as a short date, adding the year for other years', () => {
     expect(formatDateLabel('2026-10-15', today)).toBe('Thu, Oct 15')
     expect(formatDateLabel('2027-01-02', today)).toBe('Sat, Jan 2, 2027')
+  })
+})
+
+describe('formatDay', () => {
+  it('always writes the date, even for today', () => {
+    expect(formatDay('2026-10-06', '2026-10-06')).toBe('Tue, Oct 6')
+    expect(formatDay('2026-10-08', '2026-10-06')).toBe('Thu, Oct 8')
+  })
+
+  it('adds the year for another year', () => {
+    expect(formatDay('2027-01-02', '2026-10-08')).toBe('Sat, Jan 2, 2027')
   })
 })

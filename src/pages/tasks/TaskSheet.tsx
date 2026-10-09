@@ -1,30 +1,43 @@
 import { useId, useMemo, useState, type ReactNode } from 'react'
+import { ActionSheet } from '../../app/ActionSheet'
 import { BottomSheet } from '../../app/BottomSheet'
 import {
   CATEGORIES,
   categoryColor,
   createTask,
+  deleteTaskFromDate,
   findOverlaps,
   formatDateLabel,
+  formatDay,
   formatDuration,
   formatMinutesAsTime,
   formatTime,
   isDateKey,
+  occursOn,
   overlapMessage,
+  taskLogCount,
+  updateTask,
+  updateTaskForDay,
+  updateTaskFromDate,
   type RepeatKind,
   type Task,
   type TimeFormat,
 } from '../../data'
 import {
-  DURATION_OPTIONS,
   QUICK_DURATIONS,
   canSave,
+  changesMoreThanOneDay,
+  copyDraft,
+  dayOnlyPatch,
   daysOf,
+  draftFromTask,
+  durationChoices,
   endMinutes,
   endValue,
   initialDraft,
   isDirty,
   repeatProblem,
+  scopeDescriptions,
   setDuration,
   setEnd,
   setEndMode,
@@ -34,8 +47,11 @@ import {
   toNewTask,
   toggleDay,
   type Draft,
+  type Scope,
 } from './draft'
+import { deleteCopy, type DeleteCopy } from './deleteCopy'
 import { DateBox, SelectBox, TimeBox } from './fields'
+import { ScopeChoice } from './ScopeChoice'
 
 const REPEAT_CHOICES: { kind: RepeatKind; label: string }[] = [
   { kind: 'once', label: 'Once' },
@@ -55,7 +71,8 @@ const WEEK: { day: number; letter: string; name: string }[] = [
   { day: 0, letter: 'S', name: 'Sunday' },
 ]
 
-const DURATION_CHOICES = DURATION_OPTIONS.map((value) => ({ value, label: formatDuration(value) }))
+const durationList = (current: number) =>
+  durationChoices(current).map((value) => ({ value, label: formatDuration(value) }))
 
 function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
   return <div className={`rounded-20 border border-line bg-card ${className}`}>{children}</div>
@@ -95,33 +112,69 @@ function Problem({ children, tone }: { children: ReactNode; tone: 'error' | 'war
   )
 }
 
-export function NewTaskSheet({
+/** What the sheet is for. */
+export type SheetMode =
+  | { kind: 'new' }
+  /** A copy of an existing task, titled "<title> copy". */
+  | { kind: 'duplicate'; task: Task }
+  /** Giving an Inbox to-do a time: saving moves it out of the Inbox. */
+  | { kind: 'schedule'; task: Task }
+  | { kind: 'edit'; task: Task }
+
+function startingDraft(mode: SheetMode, today: string): Draft {
+  switch (mode.kind) {
+    case 'new':
+      return initialDraft(today)
+    case 'duplicate':
+      return copyDraft(mode.task, today)
+    case 'schedule':
+    case 'edit':
+      return draftFromTask(mode.task, today)
+  }
+}
+
+export function TaskSheet({
+  mode,
   tasks,
   timeFormat,
   today,
+  onDuplicate,
   onClosed,
 }: {
+  mode: SheetMode
   /** Everything already planned, to warn about overlaps. */
   tasks: readonly Task[]
   timeFormat: TimeFormat
   today: string
+  /** The Duplicate button of the Edit sheet: the page opens a New block sheet with a copy. */
+  onDuplicate: (task: Task) => void
   onClosed: () => void
 }) {
   const titleId = useId()
-  const [initial] = useState(() => initialDraft(today))
+  const editing = mode.kind === 'edit' ? mode.task : null
+  const repeating = editing !== null && editing.repeat.kind !== 'once'
+
+  const [initial] = useState(() => startingDraft(mode, today))
   const [draft, setDraft] = useState<Draft>(initial)
+  const [scope, setScope] = useState<Scope>('future')
   const [closing, setClosing] = useState(false)
-  const [confirming, setConfirming] = useState(false)
+  const [pending, setPending] = useState<'close' | 'duplicate' | null>(null)
+  const [deleting, setDeleting] = useState<DeleteCopy | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const update = (change: (d: Draft) => Draft) => setDraft(change)
+
+  // "This day only" needs a block on that day; a routine that does not run today has none.
+  const runsToday = editing !== null && occursOn(editing, today)
+  const appliedScope: Scope = runsToday ? scope : 'future'
 
   const dirty = isDirty(draft, initial)
   const timeIssue = timeProblem(draft)
   const repeatIssue = repeatProblem(draft)
   const savable = canSave(draft) && !saving
 
+  const others = useMemo(() => tasks.filter((t) => t.id !== editing?.id), [tasks, editing])
   const overlap = useMemo(() => {
     if (draft.start === '' || timeProblem(draft) !== null || repeatProblem(draft) !== null) return null
     return overlapMessage(
@@ -132,17 +185,17 @@ export function NewTaskSheet({
           repeat: { kind: draft.kind, days: daysOf(draft) },
           date: draft.kind === 'once' && isDateKey(draft.date) ? draft.date : null,
         },
-        tasks,
+        others,
         today,
       ),
     )
-  }, [draft, tasks, today])
+  }, [draft, others, today])
 
-  // Cancel, swipe down and a tap on the backdrop all come here.
+  // Cancel, swipe down, a tap on the backdrop and Escape all come here.
   const requestClose = () => {
-    if (closing || saving) return
-    if (confirming) setConfirming(false)
-    else if (dirty) setConfirming(true)
+    if (closing || saving || deleting) return
+    if (pending) setPending(null)
+    else if (dirty) setPending('close')
     else setClosing(true)
   }
 
@@ -151,7 +204,20 @@ export function NewTaskSheet({
     setSaving(true)
     setSaveError(null)
     try {
-      await createTask(toNewTask(draft))
+      if (editing === null) {
+        // New, Duplicate and Schedule (which gives an Inbox to-do its time and so moves it out).
+        if (mode.kind === 'schedule') await updateTask(mode.task.id, toNewTask(draft))
+        else await createTask(toNewTask(draft))
+      } else if (dirty) {
+        if (!repeating) {
+          await updateTask(editing.id, toNewTask(draft))
+        } else if (appliedScope === 'day') {
+          const patch = dayOnlyPatch(editing, draft)
+          if (Object.keys(patch).length > 0) await updateTaskForDay(editing.id, today, patch)
+        } else {
+          await updateTaskFromDate(editing.id, toNewTask(draft), today)
+        }
+      }
       setClosing(true)
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : 'Could not save this block.')
@@ -160,10 +226,17 @@ export function NewTaskSheet({
     }
   }
 
+  const askDelete = async () => {
+    if (!editing) return
+    setDeleting(deleteCopy(editing, await taskLogCount(editing.id), today))
+  }
+
   const end = endMinutes(draft)
   const durationCaption =
     end !== null && timeProblem(draft) === null ? `Duration · ends ${formatMinutesAsTime(end, timeFormat)}` : 'Duration'
   const endText = endValue(draft)
+
+  const sheetTitle = editing ? (repeating ? 'Edit routine' : 'Edit block') : 'New block'
 
   const header = (
     <div className="flex items-center justify-between gap-2 px-4 pb-3">
@@ -175,7 +248,7 @@ export function NewTaskSheet({
         Cancel
       </button>
       <h2 id={titleId} className="m-0 font-sans text-17 font-bold">
-        New block
+        {sheetTitle}
       </h2>
       <button
         type="button"
@@ -188,44 +261,74 @@ export function NewTaskSheet({
     </div>
   )
 
-  const overlay = confirming && (
-    <div
-      className="absolute inset-0 z-10 flex items-center justify-center bg-scrim px-6"
-      onClick={() => setConfirming(false)}
-    >
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby={`${titleId}-discard`}
-        onClick={(e) => e.stopPropagation()}
-        className="flex w-full max-w-[320px] flex-col gap-1 rounded-22 bg-card p-5"
-      >
-        <h3 id={`${titleId}-discard`} className="m-0 font-sans text-17 font-bold">
-          Discard this block?
-        </h3>
-        <p className="m-0 text-14 font-medium text-muted">What you entered will be lost.</p>
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            autoFocus
-            onClick={() => setConfirming(false)}
-            className="h-11 rounded-full border-0 bg-pill text-14 font-bold text-primary"
+  const question =
+    pending === 'duplicate'
+      ? {
+          title: 'Discard your changes?',
+          body: 'Duplicate copies the saved block, so your edits will not be kept.',
+          confirm: 'Duplicate',
+        }
+      : editing
+        ? { title: 'Discard your changes?', body: 'Your edits to this block will be lost.', confirm: 'Discard' }
+        : { title: 'Discard this block?', body: 'What you entered will be lost.', confirm: 'Discard' }
+
+  const overlay = (
+    <>
+      {pending && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center bg-scrim px-6"
+          onClick={() => setPending(null)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby={`${titleId}-discard`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex w-full max-w-[320px] flex-col gap-1 rounded-22 bg-card p-5"
           >
-            Keep editing
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setConfirming(false)
-              setClosing(true)
-            }}
-            className="h-11 rounded-full border border-missed bg-card text-14 font-bold text-missed-text"
-          >
-            Discard
-          </button>
+            <h3 id={`${titleId}-discard`} className="m-0 font-sans text-17 font-bold">
+              {question.title}
+            </h3>
+            <p className="m-0 text-14 font-medium text-muted">{question.body}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setPending(null)}
+                className="h-11 rounded-full border-0 bg-pill text-14 font-bold text-primary"
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const wasDuplicate = pending === 'duplicate'
+                  setPending(null)
+                  if (wasDuplicate && editing) onDuplicate(editing)
+                  else setClosing(true)
+                }}
+                className="h-11 rounded-full border border-missed bg-card text-14 font-bold text-missed-text"
+              >
+                {question.confirm}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+      {deleting && editing && (
+        <ActionSheet
+          title={deleting.title}
+          message={deleting.message}
+          actions={[
+            { label: deleting.confirm, danger: true, onSelect: () => deleteTaskFromDate(editing.id) },
+          ]}
+          onClosed={(chosen) => {
+            setDeleting(null)
+            if (chosen !== null) setClosing(true) // it was deleted, so this sheet has nothing left to show
+          }}
+        />
+      )}
+    </>
   )
 
   return (
@@ -236,7 +339,7 @@ export function NewTaskSheet({
       onClosed={onClosed}
       header={header}
       overlay={overlay}
-      blocked={confirming}
+      blocked={pending !== null || deleting !== null}
     >
       <div className="flex flex-col gap-3">
         {/* The whole card is the label, so tapping anywhere in it focuses the field. */}
@@ -289,7 +392,7 @@ export function NewTaskSheet({
                 caption={durationCaption}
                 display={formatDuration(draft.duration)}
                 value={draft.duration}
-                options={DURATION_CHOICES}
+                options={durationList(draft.duration)}
                 ariaLabel="Duration"
                 onChange={(v) => update((d) => setDuration(d, v))}
               />
@@ -453,7 +556,69 @@ export function NewTaskSheet({
           />
         </Card>
 
+        {repeating && editing && (
+          <ScopeChoice
+            value={appliedScope}
+            onChange={setScope}
+            descriptions={scopeDescriptions(today, today)}
+            dayDisabledText={runsToday ? undefined : `Not scheduled on ${formatDay(today, today)}.`}
+            note={
+              appliedScope === 'day' && changesMoreThanOneDay(editing, draft)
+                ? 'The repeat and notes only change with “This and future days”.'
+                : null
+            }
+          />
+        )}
+
         {saveError && <Problem tone="error">{saveError}</Problem>}
+
+        {editing && (
+          <div className="mt-0.5 grid grid-cols-2 gap-2.5">
+            <button
+              type="button"
+              onClick={() => (dirty ? setPending('duplicate') : onDuplicate(editing))}
+              className="flex h-12 items-center justify-center gap-2 rounded-full border border-line-strong bg-card text-14 font-bold text-ink"
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2.5" />
+                <path d="M15.5 8.5V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h2.5" />
+              </svg>
+              Duplicate
+            </button>
+            <button
+              type="button"
+              onClick={() => void askDelete()}
+              className="flex h-12 items-center justify-center gap-2 rounded-full border border-missed bg-card text-14 font-bold text-missed-text"
+            >
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 7h16M10 11v6M14 11v6" />
+                <path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12" />
+                <path d="M9 7V4.5h6V7" />
+              </svg>
+              {repeating ? 'Delete routine' : 'Delete block'}
+            </button>
+          </div>
+        )}
       </div>
     </BottomSheet>
   )

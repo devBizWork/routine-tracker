@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
+import type { Task } from '../../data'
 import {
   DURATION_OPTIONS,
   QUICK_DURATIONS,
   canSave,
+  changesMoreThanOneDay,
+  copyDraft,
+  dayOnlyPatch,
   daysOf,
+  draftFromTask,
+  durationChoices,
   endValue,
   initialDraft,
   isDirty,
   repeatProblem,
+  scopeDescriptions,
   setDuration,
   setEnd,
   setEndMode,
@@ -16,6 +23,7 @@ import {
   timeProblem,
   toNewTask,
   toggleDay,
+  todoCopy,
   type Draft,
 } from './draft'
 
@@ -237,5 +245,144 @@ describe('has anything changed?', () => {
 
   it('putting everything back is not dirty', () => {
     expect(isDirty(setStart(setStart(fresh(), '07:00'), ''), start)).toBe(false)
+  })
+})
+
+// ---- Edit, Duplicate, Schedule ----
+
+
+function savedTask(extra: Partial<Task> = {}): Task {
+  return {
+    id: 't1',
+    title: 'Morning workout',
+    color: 'movement',
+    startTime: '06:30',
+    plannedMinutes: 60,
+    repeat: { kind: 'daily', days: [] },
+    date: null,
+    activeFrom: '2026-10-01',
+    activeTo: null,
+    soundOverride: null,
+    notes: 'Mobility first',
+    createdAt: 0,
+    updatedAt: 0,
+    ...extra,
+  }
+}
+
+describe('a draft from a saved task', () => {
+  it('fills the form from the task', () => {
+    expect(draftFromTask(savedTask(), TODAY)).toMatchObject({
+      title: 'Morning workout',
+      start: '06:30',
+      duration: 60,
+      kind: 'daily',
+      color: 'movement',
+      notes: 'Mobility first',
+      date: TODAY,
+      endMode: false,
+    })
+  })
+
+  it('keeps custom days and a one-off date', () => {
+    const custom = draftFromTask(savedTask({ repeat: { kind: 'custom', days: [6, 0] } }), TODAY)
+    expect(custom.customDays).toEqual([6, 0])
+    const once = draftFromTask(savedTask({ repeat: { kind: 'once', days: [] }, date: '2026-10-15' }), TODAY)
+    expect(once).toMatchObject({ kind: 'once', date: '2026-10-15' })
+  })
+
+  it('an inbox to-do has no start yet, so the form cannot be saved until one is chosen', () => {
+    const todo = savedTask({ title: 'Call the dentist', startTime: null, repeat: { kind: 'once', days: [] }, notes: '' })
+    const d = draftFromTask(todo, TODAY)
+    expect(d).toMatchObject({ title: 'Call the dentist', start: '', kind: 'once', date: TODAY })
+    expect(canSave(d)).toBe(false)
+    expect(canSave(setStart(d, '10:00'))).toBe(true)
+  })
+
+  it('an unchanged form is not dirty, and any change is', () => {
+    const task = savedTask()
+    const initial = draftFromTask(task, TODAY)
+    expect(isDirty(draftFromTask(task, TODAY), initial)).toBe(false)
+    expect(isDirty({ ...initial, title: 'Run' }, initial)).toBe(true)
+  })
+})
+
+describe('Duplicate', () => {
+  it('copies everything and adds "copy" to the title', () => {
+    const d = copyDraft(savedTask(), TODAY)
+    expect(d.title).toBe('Morning workout copy')
+    expect(d).toMatchObject({ start: '06:30', duration: 60, kind: 'daily', color: 'movement', notes: 'Mobility first' })
+    expect(canSave(d)).toBe(true)
+  })
+})
+
+describe('Duplicate on an Inbox to-do', () => {
+  const todo = savedTask({
+    title: 'Call the dentist',
+    color: 'personal',
+    startTime: null,
+    plannedMinutes: 15,
+    repeat: { kind: 'once', days: [] },
+    notes: 'Ask about Friday',
+  })
+
+  it('makes another to-do titled "<title> copy" with the same category, length and notes', () => {
+    expect(todoCopy(todo)).toEqual({
+      title: 'Call the dentist copy',
+      color: 'personal',
+      plannedMinutes: 15,
+      notes: 'Ask about Friday',
+    })
+  })
+
+  it('has no time, date or repeat, so it stays in the Inbox', () => {
+    const copy = todoCopy(todo)
+    expect(copy.startTime).toBeUndefined()
+    expect(copy.repeat).toBeUndefined()
+    expect(copy.date).toBeUndefined()
+  })
+})
+
+describe('duration choices', () => {
+  it('are the usual 5-minute steps when the length is on the grid', () => {
+    expect(durationChoices(60)).toBe(DURATION_OPTIONS)
+  })
+
+  it('include an odd length so the picker never shows a wrong value', () => {
+    const choices = durationChoices(17)
+    expect(choices).toContain(17)
+    expect(choices.indexOf(17)).toBe(choices.indexOf(15) + 1)
+    expect(choices).toHaveLength(DURATION_OPTIONS.length + 1)
+  })
+})
+
+describe('"Apply changes to"', () => {
+  it('names the real date in both descriptions', () => {
+    expect(scopeDescriptions('2026-10-06', '2026-10-06')).toEqual({
+      day: 'Changes Tue, Oct 6. The routine stays as it is.',
+      future: 'From Tue, Oct 6 on. Past days keep their original plan.',
+    })
+  })
+
+  it('"This day only" can change title, color, start and length, but only what differs', () => {
+    const task = savedTask()
+    const form = { ...draftFromTask(task, TODAY), title: ' Run ', start: '07:15' as const }
+    expect(dayOnlyPatch(task, form)).toEqual({ title: 'Run', startTime: '07:15' })
+    expect(dayOnlyPatch(task, { ...draftFromTask(task, TODAY), color: 'focus', duration: 45 })).toEqual({
+      color: 'focus',
+      plannedMinutes: 45,
+    })
+    expect(dayOnlyPatch(task, draftFromTask(task, TODAY))).toEqual({})
+  })
+
+  it('notices changes a single day cannot hold: repeat, date and notes', () => {
+    const task = savedTask({ repeat: { kind: 'custom', days: [1, 3, 5] } })
+    const same = draftFromTask(task, TODAY)
+    expect(changesMoreThanOneDay(task, same)).toBe(false)
+    expect(changesMoreThanOneDay(task, { ...same, title: 'x', start: '09:00' })).toBe(false) // day-sized changes
+    expect(changesMoreThanOneDay(task, { ...same, kind: 'daily' })).toBe(true)
+    expect(changesMoreThanOneDay(task, { ...same, customDays: [1, 3] })).toBe(true)
+    expect(changesMoreThanOneDay(task, { ...same, customDays: [5, 1, 3] })).toBe(false) // same days, any order
+    expect(changesMoreThanOneDay(task, { ...same, notes: 'new' })).toBe(true)
   })
 })

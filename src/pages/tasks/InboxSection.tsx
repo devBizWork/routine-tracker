@@ -1,5 +1,7 @@
 import { useState, type KeyboardEvent } from 'react'
 import { createTask, type Task } from '../../data'
+import { rowActions } from './rowActions'
+import { SwipeRow } from './SwipeRow'
 
 /** The row at the bottom of the Inbox: type a to-do, press Return, it joins the Inbox. */
 export function QuickAdd() {
@@ -61,37 +63,55 @@ export function QuickAdd() {
   )
 }
 
-/** One to-do waiting in the Inbox, with its Schedule button. */
-export function InboxRow({ task, onSchedule }: { task: Task; onSchedule: () => void }) {
+/** One to-do waiting in the Inbox, with its Schedule button. Swipe left for Duplicate and Delete. */
+export function InboxRow({
+  task,
+  open,
+  onOpenChange,
+  onSchedule,
+  onDuplicate,
+  onDelete,
+}: {
+  task: Task
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSchedule: () => void
+  onDuplicate: () => void
+  onDelete: () => void
+}) {
   return (
-    <div className="flex min-h-[52px] items-center gap-3 border-t border-line py-1 pr-1.5 pl-4 first:border-t-0">
-      <span
-        aria-hidden="true"
-        className="box-border size-[18px] shrink-0 rounded-6 border-[1.5px] border-dashed border-unknown-edge"
-      />
-      <span className="min-w-0 flex-1 py-2 text-15 font-semibold break-words">{task.title}</span>
-      <button
-        type="button"
-        aria-label={`Schedule ${task.title}`}
-        onClick={onSchedule}
-        className="flex h-11 shrink-0 items-center gap-1.5 rounded-22 border-0 bg-pill pr-3.5 pl-3 text-13 font-bold text-primary"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.1"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
-          <path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5" />
-        </svg>
-        Schedule
-      </button>
+    <div className="border-t border-line first:border-t-0">
+      <SwipeRow open={open} onOpenChange={onOpenChange} actions={rowActions(onDuplicate, onDelete)}>
+        <div className="flex min-h-[52px] items-center gap-3 py-1 pr-1.5 pl-4">
+          <span
+            aria-hidden="true"
+            className="box-border size-[18px] shrink-0 rounded-6 border-[1.5px] border-dashed border-unknown-edge"
+          />
+          <span className="min-w-0 flex-1 py-2 text-15 font-semibold break-words">{task.title}</span>
+          <button
+            type="button"
+            aria-label={`Schedule ${task.title}`}
+            onClick={onSchedule}
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-22 border-0 bg-pill pr-3.5 pl-3 text-13 font-bold text-primary"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.1"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+              <path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5" />
+            </svg>
+            Schedule
+          </button>
+        </div>
+      </SwipeRow>
     </div>
   )
 }

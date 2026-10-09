@@ -7,6 +7,8 @@ import {
   type Task,
   type TimeFormat,
 } from '../../data'
+import { rowActions } from './rowActions'
+import { SwipeRow } from './SwipeRow'
 
 const chevron = (
   <svg
@@ -25,17 +27,28 @@ const chevron = (
   </svg>
 )
 
-/** A scheduled task: color square, title, then "Daily · 6:30 am · 60 min". */
+/**
+ * A scheduled task: color square, title, then "Daily · 6:30 am · 60 min". Tap to edit; swipe
+ * left for Duplicate and Delete.
+ */
 export function TaskRow({
   task,
   timeFormat,
   today,
-  onOpen,
+  open,
+  onOpenChange,
+  onEdit,
+  onDuplicate,
+  onDelete,
 }: {
   task: Task
   timeFormat: TimeFormat
   today: string
-  onOpen: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onEdit: () => void
+  onDuplicate: () => void
+  onDelete: () => void
 }) {
   const repeating = task.repeat.kind !== 'once'
   const label = repeating
@@ -45,24 +58,26 @@ export function TaskRow({
       : 'Once'
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex min-h-[62px] w-full items-center gap-3 border-0 bg-transparent py-2.5 pr-3 pl-3.5 text-left text-ink"
-    >
-      <span
-        aria-hidden="true"
-        className="size-10 shrink-0 rounded-12"
-        style={{ background: categoryColor(task.color) }}
-      />
-      <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-        <span className="text-15 font-bold break-words">{task.title}</span>
-        <span className="text-12-5 font-medium text-muted">
-          <span className={`font-bold ${repeating ? 'text-primary' : 'text-ink'}`}>{label}</span>
-          {task.startTime && ` · ${formatTime(task.startTime, timeFormat)}`} · {formatDuration(task.plannedMinutes)}
+    <SwipeRow open={open} onOpenChange={onOpenChange} actions={rowActions(onDuplicate, onDelete)}>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex min-h-[62px] w-full items-center gap-3 border-0 bg-transparent py-2.5 pr-3 pl-3.5 text-left text-ink"
+      >
+        <span
+          aria-hidden="true"
+          className="size-10 shrink-0 rounded-12"
+          style={{ background: categoryColor(task.color) }}
+        />
+        <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
+          <span className="text-15 font-bold break-words">{task.title}</span>
+          <span className="text-12-5 font-medium text-muted">
+            <span className={`font-bold ${repeating ? 'text-primary' : 'text-ink'}`}>{label}</span>
+            {task.startTime && ` · ${formatTime(task.startTime, timeFormat)}`} · {formatDuration(task.plannedMinutes)}
+          </span>
         </span>
-      </span>
-      {chevron}
-    </button>
+        {chevron}
+      </button>
+    </SwipeRow>
   )
 }

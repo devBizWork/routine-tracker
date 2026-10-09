@@ -35,7 +35,14 @@ interface Props {
   overlay?: ReactNode
   /** While true the sheet itself cannot be reached (an overlay question is open). */
   blocked?: boolean
+  /** "full" fills the screen below the top edge (forms). "content" is only as tall as its
+   *  contents (menus such as the Delete choices). */
+  fit?: 'full' | 'content'
 }
+
+// How many sheets are open. The screen behind stays locked until the last one closes, so a
+// menu opened over a form does not unlock the page behind the form when it goes away.
+let openSheets = 0
 
 export function BottomSheet({
   labelledBy,
@@ -46,6 +53,7 @@ export function BottomSheet({
   children,
   overlay,
   blocked = false,
+  fit = 'full',
 }: Props) {
   const sheetRef = useRef<HTMLElement>(null)
   const frameRef = useRef<HTMLDivElement>(null)
@@ -86,10 +94,12 @@ export function BottomSheet({
   useEffect(() => {
     mounted.current = true
     const root = document.getElementById('root')
+    openSheets += 1
     root?.setAttribute('inert', '')
     return () => {
       mounted.current = false
-      root?.removeAttribute('inert')
+      openSheets -= 1
+      if (openSheets === 0) root?.removeAttribute('inert')
       // Only after a real close (React's development double-run mounts again at once).
       setTimeout(() => {
         if (!mounted.current) opener?.focus?.()
@@ -181,12 +191,14 @@ export function BottomSheet({
         className="scrim absolute inset-0 touch-none bg-scrim"
         onClick={onRequestClose}
       />
-      <div
-        aria-hidden="true"
-        data-closing={closing}
-        className="scrim absolute rounded-t-22 bg-sheet-peek"
-        style={{ left: 14, right: 14, top: 'calc(var(--safe-top) + 14px)', height: 40 }}
-      />
+      {fit === 'full' && (
+        <div
+          aria-hidden="true"
+          data-closing={closing}
+          className="scrim absolute rounded-t-22 bg-sheet-peek"
+          style={{ left: 14, right: 14, top: 'calc(var(--safe-top) + 14px)', height: 40 }}
+        />
+      )}
       <section
         ref={sheetRef}
         role="dialog"
@@ -195,7 +207,11 @@ export function BottomSheet({
         data-closing={closing}
         inert={blocked}
         className="sheet absolute inset-x-0 bottom-0 flex flex-col rounded-t-28 bg-ground"
-        style={{ top: 'calc(var(--safe-top) + 28px)' }}
+        style={
+          fit === 'full'
+            ? { top: 'calc(var(--safe-top) + 28px)' }
+            : { maxHeight: 'calc(100% - var(--safe-top) - 28px)' }
+        }
       >
         <div
           className="touch-none select-none"

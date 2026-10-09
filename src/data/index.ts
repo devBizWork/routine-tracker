@@ -14,7 +14,11 @@ export const {
   getTask,
   createTask,
   updateTask,
+  updateTaskFromDate,
+  updateTaskForDay,
   deleteTask,
+  deleteTaskFromDate,
+  taskLogCount,
   getDay,
   peekDay,
   updateOccurrence,
@@ -37,6 +41,7 @@ export { CATEGORIES, DEFAULT_CATEGORY, categoryColor } from './categories'
 export { addDays, dayOfWeek, isDateKey, parseDateKey, toDateKey } from './dates'
 export {
   formatDateLabel,
+  formatDay,
   formatDuration,
   formatMinutesAsTime,
   formatRepeat,
@@ -44,7 +49,7 @@ export {
   type TimeFormat,
 } from './format'
 export { findOverlaps, overlapMessage } from './overlap'
-export { occursOn } from './repeat'
+export { hasEnded, occursOn } from './repeat'
 export { isTimeOfDay, minutesToTime, timeToMinutes } from './time'
 export { DataError } from './validate'
 export * from './types'
