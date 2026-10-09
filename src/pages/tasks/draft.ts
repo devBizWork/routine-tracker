@@ -208,6 +208,19 @@ export function copyDraft(task: Task, today: DateKey): Draft {
 }
 
 /**
+ * Duplicate on an Inbox to-do: another to-do for the Inbox, titled "<title> copy", with the same
+ * category, length and notes. It has no time yet, so it stays in the Inbox until it is scheduled.
+ */
+export function todoCopy(task: Task): NewTask {
+  return {
+    title: `${task.title} copy`,
+    color: task.color,
+    plannedMinutes: task.plannedMinutes,
+    notes: task.notes,
+  }
+}
+
+/**
  * The duration choices for the picker: 5 to 480 in 5-minute steps, plus the task's own length
  * if it is not on that grid (a task made some other way), so the picker never shows a wrong value.
  */

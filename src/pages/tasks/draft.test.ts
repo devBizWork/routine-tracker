@@ -23,6 +23,7 @@ import {
   timeProblem,
   toNewTask,
   toggleDay,
+  todoCopy,
   type Draft,
 } from './draft'
 
@@ -312,6 +313,33 @@ describe('Duplicate', () => {
     expect(d.title).toBe('Morning workout copy')
     expect(d).toMatchObject({ start: '06:30', duration: 60, kind: 'daily', color: 'movement', notes: 'Mobility first' })
     expect(canSave(d)).toBe(true)
+  })
+})
+
+describe('Duplicate on an Inbox to-do', () => {
+  const todo = savedTask({
+    title: 'Call the dentist',
+    color: 'personal',
+    startTime: null,
+    plannedMinutes: 15,
+    repeat: { kind: 'once', days: [] },
+    notes: 'Ask about Friday',
+  })
+
+  it('makes another to-do titled "<title> copy" with the same category, length and notes', () => {
+    expect(todoCopy(todo)).toEqual({
+      title: 'Call the dentist copy',
+      color: 'personal',
+      plannedMinutes: 15,
+      notes: 'Ask about Friday',
+    })
+  })
+
+  it('has no time, date or repeat, so it stays in the Inbox', () => {
+    const copy = todoCopy(todo)
+    expect(copy.startTime).toBeUndefined()
+    expect(copy.repeat).toBeUndefined()
+    expect(copy.date).toBeUndefined()
   })
 })
 

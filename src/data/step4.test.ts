@@ -355,3 +355,15 @@ describe('the saved routine as the lists will see it', () => {
     expect(active.map((t) => t.id)).toEqual([next.id])
   })
 })
+
+describe('duplicating an Inbox to-do', () => {
+  it('createTask with the copy fields adds a second to-do that stays in the Inbox', async () => {
+    const { api } = setup()
+    const todo = await api.createTask({ title: 'Call the dentist', color: 'personal', plannedMinutes: 15, notes: 'Ask about Friday' })
+    const copy = await api.createTask({ title: 'Call the dentist copy', color: todo.color, plannedMinutes: todo.plannedMinutes, notes: todo.notes })
+    expect(copy.id).not.toBe(todo.id)
+    expect(copy).toMatchObject({ title: 'Call the dentist copy', color: 'personal', plannedMinutes: 15, notes: 'Ask about Friday', startTime: null, activeFrom: null })
+    expect((await api.listTasks()).map((t) => t.title)).toEqual(['Call the dentist', 'Call the dentist copy'])
+    expect((await api.getDay(TODAY)).length).toBe(0) // not on any day
+  })
+})

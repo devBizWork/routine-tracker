@@ -1,7 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ActionSheet } from '../app/ActionSheet'
+import { ComingSoonToast } from '../app/ComingSoonToast'
 import { PageHeader } from '../app/PageHeader'
 import {
+  createTask,
   deleteTaskFromDate,
   hasEnded,
   listTasks,
@@ -14,6 +16,7 @@ import { useLiveQuery } from '../data/useLiveQuery'
 import { deleteCopy, type DeleteCopy } from './tasks/deleteCopy'
 import { InboxRow, QuickAdd } from './tasks/InboxSection'
 import { TaskRow } from './tasks/TaskRow'
+import { todoCopy } from './tasks/draft'
 import { TaskSheet, type SheetMode } from './tasks/TaskSheet'
 
 function Section({
@@ -73,6 +76,9 @@ export function TasksPage() {
   const [sheet, setSheet] = useState<SheetMode | null>(null)
   const [openRow, setOpenRow] = useState<string | null>(null) // the row that is swiped open
   const [deleting, setDeleting] = useState<{ task: Task; copy: DeleteCopy } | null>(null)
+  // A short message at the bottom (used when something could not be saved). tap 0 = hidden.
+  const [notice, setNotice] = useState({ tap: 0, message: '' })
+  const hideNotice = useCallback(() => setNotice((n) => ({ ...n, tap: 0 })), [])
 
   // A tap anywhere except the open row closes it.
   useEffect(() => {
@@ -92,6 +98,15 @@ export function TasksPage() {
   const askDelete = async (task: Task) => {
     setOpenRow(null)
     setDeleting({ task, copy: deleteCopy(task, await taskLogCount(task.id), today) })
+  }
+
+  const duplicateTodo = async (task: Task) => {
+    setOpenRow(null)
+    try {
+      await createTask(todoCopy(task))
+    } catch {
+      setNotice((n) => ({ tap: n.tap + 1, message: 'Could not copy that to-do. Please try again.' }))
+    }
   }
 
   const rowProps = (task: Task) => ({
@@ -152,6 +167,8 @@ export function TasksPage() {
                 key={task.id}
                 task={task}
                 {...rowProps(task)}
+                // Duplicating a to-do just adds another one to the Inbox.
+                onDuplicate={() => void duplicateTodo(task)}
                 onSchedule={() => openSheet({ kind: 'schedule', task })}
               />
             ))}
@@ -274,6 +291,8 @@ export function TasksPage() {
           onClosed={() => setDeleting(null)}
         />
       )}
+
+      <ComingSoonToast tap={notice.tap} onDone={hideNotice} message={notice.message} />
     </div>
   )
 }

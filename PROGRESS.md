@@ -12,7 +12,8 @@
     - **This day only:** changes just that day's block (title, color, start, length).
     - **This and future days:** the old routine ends the day before (`activeTo`) and a changed
       copy starts that day. Past blocks keep their plan and logs.
-  - Duplicate opens a New block sheet with "<title> copy". Delete opens an iPhone-style menu
+  - Duplicate on a routine or one-off opens a New block sheet with "<title> copy"; on an Inbox to-do
+    it adds another to-do to the Inbox. Delete opens an iPhone-style menu
     ("Delete from today on" for routines, "Delete block", "Delete to-do"), saying logs stay in history.
   - Swipe left on any row for Duplicate and Delete; a tap elsewhere closes it (keyboard: Left arrow
     opens, Right arrow or Escape closes).
@@ -59,9 +60,6 @@
 - **Step 4 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a real
   mouse drag for the swipe. Only the phone can confirm: the finger swipe feel and that it does not
   fight with scrolling, the Delete menu and its swipe-down, and the edit sheet with the keyboard open.
-- **Duplicate on an Inbox to-do** opens a New block sheet ("<title> copy") as the step asked, so it
-  needs a start time to be saved and ends up as a block, not as a second to-do in the Inbox. If you
-  would rather it make a second Inbox to-do straight away, say so.
 
 - Step 1 checked on a real iPhone: live site opens, Add to Home Screen works. Airplane mode
   was part of the walkthrough; no problems were reported.
@@ -116,6 +114,14 @@
     does not run today (for example a weekday routine on a Saturday), "This day only" is greyed out
     with "Not scheduled on <date>".
   - **A one-off or to-do that becomes repeating starts today**, never in the past.
+- **Duplicate on an Inbox to-do adds another to-do** to the Inbox straight away ("<title> copy", same
+  category, length and notes, no time), with no sheet. Duplicate on a routine or one-off still opens a
+  New block sheet. (Decided by you after the first version of this step.)
+- **Swipe buttons are hidden until a row is open.** Found on the iPhone: a thin red line under the
+  arrow of some rows. The red Delete button sits behind each row, and a row whose height ends on a
+  fraction of a pixel (such as 64.25 px) can show a hair of it along the bottom edge. The buttons are
+  now `visibility: hidden` at rest (they show while open, while dragging, and for the 0.2 s it takes
+  to slide shut).
 - **Reusable pieces added:** `ActionSheet` (the iPhone-style menu, built on `BottomSheet` with
   `fit="content"`), `SwipeRow`, and a count of open sheets so a menu over a form does not unlock the
   page behind the form when it closes. `ComingSoonToast` is no longer used by any screen but stays

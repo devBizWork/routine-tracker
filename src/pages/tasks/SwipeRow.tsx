@@ -93,10 +93,21 @@ export function SwipeRow({
   }
 
   const shown = dragX ?? (open ? -total : 0)
+  // The buttons are only visible while the row is open or being dragged (and for the moment it
+  // takes to slide shut). Otherwise a row whose height ends on a fraction of a pixel can show a
+  // hair of the red Delete button along its bottom edge, under the arrow.
+  const revealed = open || dragX !== null
 
   return (
     <div data-swipe-row data-open={open} className="relative overflow-hidden">
-      <div className="absolute inset-y-0 right-0 flex" inert={!open}>
+      <div
+        className="absolute inset-y-0 right-0 flex"
+        inert={!open}
+        style={{
+          visibility: revealed ? 'visible' : 'hidden',
+          transition: revealed ? 'none' : 'visibility 0s linear 200ms',
+        }}
+      >
         {actions.map((action) => (
           <button
             key={action.label}
