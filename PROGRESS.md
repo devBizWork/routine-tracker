@@ -54,7 +54,14 @@
   yet known. The panel now opens the moment the fifth tap lands (it no longer waits for the
   database) and shows a red notice with the real error if the database cannot be read. After
   the next deploy, open it in Edge and record the message here.
-- **Step 3 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px only.
+- **Step 3 fix (keyboard pushes the New block sheet off screen): fixed, needs iPhone check.**
+  Found on the iPhone: opening the sheet opened the keyboard, and Safari slid the whole sheet
+  up so Cancel, the title and Save went off the top. The sheet's frame now follows the part of
+  the screen that is really visible (`visualViewport`, in `src/app/visibleArea.ts`): it shrinks
+  above the keyboard, follows the page if Safari slides it, and scrolls a focused field into
+  view. Simulated in a desktop browser (a pretend keyboard of 520 px and 420 px, and a 140 px
+  slide); not yet confirmed with the real iPhone keyboard.
+- **Step 3 not yet checked on the iPhone** (apart from the keyboard bug above). Tested in a desktop browser at 390 and 375 px only.
   Things only the iPhone can confirm: (1) tapping Start, End, Date or Duration opens the
   phone's own wheel picker (they are invisible native fields laid over the drawn boxes);
   (2) the keyboard and the sheet get along (Save is at the top, so it stays reachable);

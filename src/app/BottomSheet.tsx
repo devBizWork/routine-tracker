@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { followVisibleArea } from './visibleArea'
 
 // A sheet that slides up over the current screen (design/screens/AddTask.html).
 // It is shown for as long as it is rendered; to close it, set `closing` and it slides
@@ -61,6 +62,12 @@ export function BottomSheet({
 
   // If the sheet goes away mid-swipe, stop listening.
   useEffect(() => () => stopDrag.current?.(), [])
+
+  // Stay inside the visible part of the screen when the phone's keyboard opens.
+  useEffect(() => {
+    const frame = frameRef.current
+    return frame ? followVisibleArea(frame) : undefined
+  }, [])
 
   // Closing: drop any leftover swipe offset so the slide-away continues from where it is.
   useEffect(() => {
