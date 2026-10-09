@@ -1,7 +1,7 @@
 import { DEFAULT_CATEGORY } from './categories'
 import { defaultSettings } from './defaults'
 import { RoutineDb, SETTINGS_KEY } from './db'
-import { isDateKey, toDateKey } from './dates'
+import { addDays, isDateKey, toDateKey } from './dates'
 import { newId } from './ids'
 import { occursOn } from './repeat'
 import { buildSampleData } from './sample'
@@ -104,8 +104,12 @@ export function createDataApi(options: DataApiOptions = {}) {
    * A field is only updated if that day's block still had the task's old value, so a
    * "this day only" change made to one block is not overwritten.
    */
-  async function syncFutureDays(task: Task, previous: Task | null): Promise<void> {
-    const dates = await db.days.where('date').aboveOrEqual(today()).primaryKeys()
+  async function syncFutureDays(
+    task: Task,
+    previous: Task | null,
+    from: DateKey = today(),
+  ): Promise<void> {
+    const dates = await db.days.where('date').aboveOrEqual(from).primaryKeys()
     for (const date of dates) {
       const existing = await db.occurrences.where('[taskId+date]').equals([task.id, date]).first()
       const shouldAppear = occursOn(task, date)
@@ -182,16 +186,14 @@ export function createDataApi(options: DataApiOptions = {}) {
       if (!previous) throw new DataError('That task no longer exists.')
 
       const changes = defined(patch)
-      const justScheduled = previous.startTime === null && changes.startTime != null
+      const becomesRepeating =
+        previous.repeat.kind === 'once' && (changes.repeat ?? previous.repeat).kind !== 'once'
       const next = normalizeTask(
         {
           ...previous,
           ...changes,
-          // Scheduling an inbox task as a repeating one starts it today, not in the past.
-          ...(justScheduled &&
-          changes.activeFrom === undefined &&
-          previous.activeFrom === null &&
-          (changes.repeat ?? previous.repeat).kind !== 'once'
+          // A to-do or one-off that becomes a repeating task starts today, not in the past.
+          ...(becomesRepeating && changes.activeFrom === undefined && previous.activeFrom === null
             ? { activeFrom: today() }
             : {}),
           id: previous.id,
@@ -214,6 +216,122 @@ export function createDataApi(options: DataApiOptions = {}) {
     await db.transaction('rw', db.tasks, db.occurrences, async () => {
       await db.tasks.delete(id)
       const from = today()
+      await db.occurrences
+        .where('taskId')
+        .equals(id)
+        .filter((o) => o.date >= from && isUnlogged(o))
+        .delete()
+    })
+  }
+
+  /**
+   * "This and future days": changes a repeating task from one date on. The old task ends the
+   * day before (activeTo) and a changed copy starts on that date, so earlier days keep their
+   * plan and logs. Blocks from that date on that already exist move to the new task: ones with
+   * no log follow the change, ones with a log keep it. The date is never earlier than today.
+   * If the task only began on or after that date there is nothing to preserve, so it is
+   * simply changed in place.
+   */
+  async function updateTaskFromDate(id: string, patch: TaskPatch, fromDate: DateKey): Promise<Task> {
+    requireDate(fromDate)
+    const from = fromDate < today() ? today() : fromDate
+    return db.transaction('rw', db.tasks, db.occurrences, db.days, async () => {
+      const old = await db.tasks.get(id)
+      if (!old) throw new DataError('That task no longer exists.')
+
+      // Nothing before `from` to protect: change it where it stands.
+      if (old.activeFrom !== null && old.activeFrom >= from) {
+        const next = normalizeTask(
+          { ...old, ...defined(patch), id: old.id, createdAt: old.createdAt, updatedAt: now().getTime() },
+          today(),
+        )
+        await db.tasks.put(next)
+        await syncFutureDays(next, old, from)
+        return next
+      }
+
+      const at = now().getTime()
+      const draft = normalizeTask(
+        {
+          ...old,
+          ...defined(patch),
+          id: newId(),
+          // The changed version starts on `from` and keeps the old end date.
+          activeFrom: from,
+          activeTo: old.activeTo,
+          createdAt: at,
+          updatedAt: at,
+        },
+        today(),
+      )
+      // A one-off has no date range of its own.
+      const next = draft.repeat.kind === 'once' ? { ...draft, activeFrom: null } : draft
+
+      await db.tasks.put({ ...old, activeTo: addDays(from, -1), updatedAt: at })
+      await db.tasks.add(next)
+      // Blocks from `from` on belong to the new task (their logs, if any, stay on them).
+      await db.occurrences
+        .where('taskId')
+        .equals(old.id)
+        .filter((o) => o.date >= from)
+        .modify({ taskId: next.id })
+      await syncFutureDays(next, old, from)
+      return next
+    })
+  }
+
+  /**
+   * "This day only": changes one date's block of a repeating task and nothing else. Only the
+   * title, color, start time and length can differ for a single day; the routine stays as it is.
+   */
+  async function updateTaskForDay(
+    taskId: string,
+    date: DateKey,
+    patch: Partial<Pick<TaskFields, 'title' | 'color' | 'startTime' | 'plannedMinutes'>>,
+  ): Promise<Occurrence> {
+    requireDate(date)
+    const blocks = await getDay(date) // creates the day first if it is new
+    const block = blocks.find((o) => o.taskId === taskId)
+    if (!block) throw new DataError('This routine does not run on that day.')
+    const changes = defined(patch)
+    return updateOccurrence(block.id, {
+      ...(changes.title !== undefined ? { title: changes.title.trim() } : {}),
+      ...(changes.color !== undefined ? { color: changes.color } : {}),
+      ...(changes.startTime != null ? { plannedStart: changes.startTime } : {}),
+      ...(changes.plannedMinutes !== undefined ? { plannedMinutes: changes.plannedMinutes } : {}),
+    })
+  }
+
+  /** How many blocks of this task have a log (done, skipped, a timer or a note). */
+  async function taskLogCount(taskId: string): Promise<number> {
+    return db.occurrences
+      .where('taskId')
+      .equals(taskId)
+      .filter((o) => !isUnlogged(o))
+      .count()
+  }
+
+  /**
+   * The Delete button. A routine is deleted "from a date on" (today unless told otherwise): it
+   * ends the day before, blocks from then on with no log are removed, and earlier days and
+   * everything already logged stay. A routine that only began on or after that date has no
+   * past to keep, so it is removed outright. A to-do or one-off is removed; a log it already
+   * has stays in history.
+   */
+  async function deleteTaskFromDate(id: string, fromDate: DateKey = today()): Promise<void> {
+    requireDate(fromDate)
+    const from = fromDate < today() ? today() : fromDate
+    await db.transaction('rw', db.tasks, db.occurrences, async () => {
+      const task = await db.tasks.get(id)
+      if (!task) return
+      const hasPast = task.repeat.kind !== 'once' && (task.activeFrom === null || task.activeFrom < from)
+      if (hasPast) {
+        const lastDay = addDays(from, -1)
+        const activeTo = task.activeTo !== null && task.activeTo < lastDay ? task.activeTo : lastDay
+        await db.tasks.put({ ...task, activeTo, updatedAt: now().getTime() })
+      } else {
+        await db.tasks.delete(id)
+      }
       await db.occurrences
         .where('taskId')
         .equals(id)
@@ -395,7 +513,11 @@ export function createDataApi(options: DataApiOptions = {}) {
     getTask,
     createTask,
     updateTask,
+    updateTaskFromDate,
+    updateTaskForDay,
     deleteTask,
+    deleteTaskFromDate,
+    taskLogCount,
     getDay,
     peekDay,
     updateOccurrence,

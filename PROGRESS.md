@@ -3,6 +3,21 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 4:** editing tasks, duplicate, delete, swipe actions, scheduling Inbox to-dos. Tag: `step-4`
+  (added after the merge).
+  - Tapping a row opens the sheet in edit mode: "Edit routine" or "Edit block" (one-offs), with
+    Cancel, Save, Duplicate and Delete.
+  - "Apply changes to" (repeating tasks only), default "This and future days", with the real date
+    in the descriptions ("Changes Thu, Oct 8" / "From Thu, Oct 8 on").
+    - **This day only:** changes just that day's block (title, color, start, length).
+    - **This and future days:** the old routine ends the day before (`activeTo`) and a changed
+      copy starts that day. Past blocks keep their plan and logs.
+  - Duplicate opens a New block sheet with "<title> copy". Delete opens an iPhone-style menu
+    ("Delete from today on" for routines, "Delete block", "Delete to-do"), saying logs stay in history.
+  - Swipe left on any row for Duplicate and Delete; a tap elsewhere closes it (keyboard: Left arrow
+    opens, Right arrow or Escape closes).
+  - Inbox "Schedule" opens a New block sheet with the title filled in; saving moves it out of the Inbox.
+  - 50 new tests cover both scopes against past, today and future dates, plus delete.
 - **Step 3:** the Tasks tab and creating new tasks. Tag: `step-3` (added after the merge).
   - Tasks screen as designed: title with the task count; Inbox, Routines and One-off sections
     (rows show title, repeat label or date, start time and duration); the round + button.
@@ -41,6 +56,13 @@
 
 ## Known bugs / not yet verified
 
+- **Step 4 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a real
+  mouse drag for the swipe. Only the phone can confirm: the finger swipe feel and that it does not
+  fight with scrolling, the Delete menu and its swipe-down, and the edit sheet with the keyboard open.
+- **Duplicate on an Inbox to-do** opens a New block sheet ("<title> copy") as the step asked, so it
+  needs a start time to be saved and ends up as a block, not as a second to-do in the Inbox. If you
+  would rather it make a second Inbox to-do straight away, say so.
+
 - Step 1 checked on a real iPhone: live site opens, Add to Home Screen works. Airplane mode
   was part of the walkthrough; no problems were reported.
 - Step 2 was tested by the user: Storage said "Persistent" and the Developer section worked
@@ -77,6 +99,27 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 4 rules (in `src/data/api.ts`).**
+  - **A deleted or replaced routine keeps its row** with an end date (`activeTo`) so days nobody has
+    opened yet still show it as Unknown, and the Tasks list hides routines that have ended. A routine
+    that only began today (nothing earlier to protect) is removed outright. Blocks with a log are
+    never removed.
+  - **Edits start no earlier than today.** `updateTaskFromDate` and `deleteTaskFromDate` treat an
+    earlier date as today, so the past can never change through them. They take any date, ready for
+    the Day screen later; the Tasks screen always passes today.
+  - **Blocks from that date on move to the new copy**, including a block already logged today (its
+    log stays, and there is still only one block that day). Unlogged blocks follow the edit field by
+    field, so an earlier "this day only" change survives.
+  - **"This day only"** can only change title, color, start time and length. If the repeat, date or
+    notes were also changed, a note says those only apply with "This and future days". If the routine
+    does not run today (for example a weekday routine on a Saturday), "This day only" is greyed out
+    with "Not scheduled on <date>".
+  - **A one-off or to-do that becomes repeating starts today**, never in the past.
+- **Reusable pieces added:** `ActionSheet` (the iPhone-style menu, built on `BottomSheet` with
+  `fit="content"`), `SwipeRow`, and a count of open sheets so a menu over a form does not unlock the
+  page behind the form when it closes. `ComingSoonToast` is no longer used by any screen but stays
+  for later steps.
 
 - **TypeScript 6.0.x, not 7.** The ESLint TypeScript plugin does not support TypeScript 7 yet.
   Revisit when `typescript-eslint` allows it.

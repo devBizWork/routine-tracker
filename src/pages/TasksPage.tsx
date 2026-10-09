@@ -1,11 +1,20 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
-import { ComingSoonToast } from '../app/ComingSoonToast'
+import { useEffect, useState, type ReactNode } from 'react'
+import { ActionSheet } from '../app/ActionSheet'
 import { PageHeader } from '../app/PageHeader'
-import { listTasks, readSettings, today as todayKey } from '../data'
+import {
+  deleteTaskFromDate,
+  hasEnded,
+  listTasks,
+  readSettings,
+  taskLogCount,
+  today as todayKey,
+  type Task,
+} from '../data'
 import { useLiveQuery } from '../data/useLiveQuery'
+import { deleteCopy, type DeleteCopy } from './tasks/deleteCopy'
 import { InboxRow, QuickAdd } from './tasks/InboxSection'
-import { NewTaskSheet } from './tasks/NewTaskSheet'
 import { TaskRow } from './tasks/TaskRow'
+import { TaskSheet, type SheetMode } from './tasks/TaskSheet'
 
 function Section({
   id,
@@ -56,42 +65,67 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 export function TasksPage() {
-  const tasks = useLiveQuery(listTasks)
+  const allTasks = useLiveQuery(listTasks)
   const settings = useLiveQuery(readSettings)
   const timeFormat = settings?.timeFormat ?? '12h'
   const today = todayKey()
 
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [soon, setSoon] = useState(0)
-  const comingSoon = () => setSoon((n) => n + 1)
-  const hideSoon = useCallback(() => setSoon(0), [])
+  const [sheet, setSheet] = useState<SheetMode | null>(null)
+  const [openRow, setOpenRow] = useState<string | null>(null) // the row that is swiped open
+  const [deleting, setDeleting] = useState<{ task: Task; copy: DeleteCopy } | null>(null)
 
-  const { inbox, routines, oneOffs } = useMemo(() => {
-    const all = tasks ?? []
-    return {
-      inbox: all.filter((t) => t.startTime === null),
-      routines: all
-        .filter((t) => t.startTime !== null && t.repeat.kind !== 'once')
-        .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? '') || a.title.localeCompare(b.title)),
-      oneOffs: all
-        .filter((t) => t.startTime !== null && t.repeat.kind === 'once')
-        .sort(
-          (a, b) =>
-            (a.date ?? '').localeCompare(b.date ?? '') ||
-            (a.startTime ?? '').localeCompare(b.startTime ?? '') ||
-            a.title.localeCompare(b.title),
-        ),
+  // A tap anywhere except the open row closes it.
+  useEffect(() => {
+    if (openRow === null) return
+    const closeUnlessOpenRow = (event: PointerEvent) => {
+      if (!(event.target as Element).closest('[data-swipe-row][data-open="true"]')) setOpenRow(null)
     }
-  }, [tasks])
+    document.addEventListener('pointerdown', closeUnlessOpenRow, true)
+    return () => document.removeEventListener('pointerdown', closeUnlessOpenRow, true)
+  }, [openRow])
 
-  const total = tasks?.length ?? 0
+  const openSheet = (mode: SheetMode) => {
+    setOpenRow(null)
+    setSheet(mode)
+  }
+
+  const askDelete = async (task: Task) => {
+    setOpenRow(null)
+    setDeleting({ task, copy: deleteCopy(task, await taskLogCount(task.id), today) })
+  }
+
+  const rowProps = (task: Task) => ({
+    open: openRow === task.id,
+    onOpenChange: (open: boolean) => setOpenRow(open ? task.id : null),
+    onDuplicate: () => openSheet({ kind: 'duplicate', task }),
+    onDelete: () => void askDelete(task),
+  })
+
+  // Routines that were deleted or replaced by an edited copy keep their row (so earlier days
+  // stay intact) but are finished, so they are not listed.
+  const tasks = (allTasks ?? []).filter((t) => !hasEnded(t, today))
+
+  const inbox = tasks.filter((t) => t.startTime === null)
+  const routines = tasks
+    .filter((t) => t.startTime !== null && t.repeat.kind !== 'once')
+    .sort((a, b) => (a.startTime ?? '').localeCompare(b.startTime ?? '') || a.title.localeCompare(b.title))
+  const oneOffs = tasks
+    .filter((t) => t.startTime !== null && t.repeat.kind === 'once')
+    .sort(
+      (a, b) =>
+        (a.date ?? '').localeCompare(b.date ?? '') ||
+        (a.startTime ?? '').localeCompare(b.startTime ?? '') ||
+        a.title.localeCompare(b.title),
+    )
+
+  const total = tasks.length
 
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader
         title="Tasks"
         trailing={
-          tasks && (
+          allTasks && (
             <span className="pb-1.5 text-13 font-semibold text-muted">
               {total} {total === 1 ? 'task' : 'tasks'}
             </span>
@@ -99,7 +133,7 @@ export function TasksPage() {
         }
       />
 
-      {tasks && (
+      {allTasks && (
         <>
           <Section
             id="inbox-h"
@@ -114,7 +148,12 @@ export function TasksPage() {
             }
           >
             {inbox.map((task) => (
-              <InboxRow key={task.id} task={task} onSchedule={comingSoon} />
+              <InboxRow
+                key={task.id}
+                task={task}
+                {...rowProps(task)}
+                onSchedule={() => openSheet({ kind: 'schedule', task })}
+              />
             ))}
             <QuickAdd />
           </Section>
@@ -138,7 +177,14 @@ export function TasksPage() {
             ) : (
               <div className="divide-y divide-line">
                 {routines.map((task) => (
-                  <TaskRow key={task.id} task={task} timeFormat={timeFormat} today={today} onOpen={comingSoon} />
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    timeFormat={timeFormat}
+                    today={today}
+                    {...rowProps(task)}
+                    onEdit={() => openSheet({ kind: 'edit', task })}
+                  />
                 ))}
               </div>
             )}
@@ -148,7 +194,7 @@ export function TasksPage() {
             id="oneoff-h"
             title="ONE-OFF"
             count={oneOffs.length}
-            caption="Swiping: coming soon"
+            caption="Swipe a row for more"
             icon={
               <>
                 <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
@@ -161,7 +207,14 @@ export function TasksPage() {
             ) : (
               <div className="divide-y divide-line">
                 {oneOffs.map((task) => (
-                  <TaskRow key={task.id} task={task} timeFormat={timeFormat} today={today} onOpen={comingSoon} />
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    timeFormat={timeFormat}
+                    today={today}
+                    {...rowProps(task)}
+                    onEdit={() => openSheet({ kind: 'edit', task })}
+                  />
                 ))}
               </div>
             )}
@@ -174,7 +227,7 @@ export function TasksPage() {
         <button
           type="button"
           aria-label="Add task"
-          onClick={() => setSheetOpen(true)}
+          onClick={() => openSheet({ kind: 'new' })}
           className="pointer-events-auto flex size-15 items-center justify-center rounded-30 border-0 bg-primary text-on-primary shadow-fab"
         >
           <svg
@@ -194,16 +247,33 @@ export function TasksPage() {
       </div>
       <div className="h-4" />
 
-      {sheetOpen && (
-        <NewTaskSheet
-          tasks={tasks ?? []}
+      {sheet && (
+        <TaskSheet
+          // A different sheet (for example Duplicate opened from Edit) starts fresh.
+          key={`${sheet.kind}-${'task' in sheet ? sheet.task.id : 'new'}`}
+          mode={sheet}
+          tasks={tasks}
           timeFormat={timeFormat}
           today={today}
-          onClosed={() => setSheetOpen(false)}
+          onDuplicate={(task) => openSheet({ kind: 'duplicate', task })}
+          onClosed={() => setSheet(null)}
         />
       )}
 
-      <ComingSoonToast tap={soon} onDone={hideSoon} />
+      {deleting && (
+        <ActionSheet
+          title={deleting.copy.title}
+          message={deleting.copy.message}
+          actions={[
+            {
+              label: deleting.copy.confirm,
+              danger: true,
+              onSelect: () => deleteTaskFromDate(deleting.task.id),
+            },
+          ]}
+          onClosed={() => setDeleting(null)}
+        />
+      )}
     </div>
   )
 }

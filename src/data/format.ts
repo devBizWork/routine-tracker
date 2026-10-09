@@ -50,6 +50,12 @@ export function formatRepeat(repeat: Repeat): string {
   }
 }
 
+/** Always the date itself, never "Today": "Tue, Oct 6" (with the year if it is another year). */
+export function formatDay(date: DateKey, today: DateKey): string {
+  const sameYear = date.slice(0, 4) === today.slice(0, 4)
+  return format(parseDateKey(date), sameYear ? 'EEE, MMM d' : 'EEE, MMM d, yyyy')
+}
+
 /** "Today", "Tomorrow", "Yesterday", or "Thu, Oct 8" (with the year if it is another year). */
 export function formatDateLabel(date: DateKey, today: DateKey): string {
   if (date === today) return 'Today'

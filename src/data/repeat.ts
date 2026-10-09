@@ -4,6 +4,14 @@ import type { DateKey, Task } from './types'
 type Schedulable = Pick<Task, 'startTime' | 'repeat' | 'date' | 'activeFrom' | 'activeTo'>
 
 /**
+ * Has this task finished for good? A routine that was deleted "from today on" or replaced by
+ * an edited copy keeps its row (so earlier days stay intact) but stops on its last day.
+ */
+export function hasEnded(task: Pick<Task, 'activeTo'>, today: DateKey): boolean {
+  return task.activeTo !== null && task.activeTo < today
+}
+
+/**
  * Does this task appear on this date?
  *
  * - Inbox tasks (no start time) never appear on a day.

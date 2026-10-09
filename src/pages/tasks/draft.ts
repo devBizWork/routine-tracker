@@ -1,6 +1,7 @@
 import {
   DEFAULT_CATEGORY,
   dayOfWeek,
+  formatDay,
   isDateKey,
   minutesToTime,
   timeToMinutes,
@@ -8,6 +9,7 @@ import {
   type DateKey,
   type NewTask,
   type RepeatKind,
+  type Task,
   type TimeOfDay,
 } from '../../data'
 
@@ -180,4 +182,75 @@ export function isDirty(d: Draft, initial: Draft): boolean {
   const content = (x: Draft) =>
     JSON.stringify([x.title.trim(), x.start, x.duration, x.endRaw, x.kind, x.date, x.customDays, x.color, x.notes.trim()])
   return content(d) !== content(initial)
+}
+
+// ---- Starting a draft from an existing task (Edit, Duplicate, Schedule) ----
+
+/** The form filled in from a saved task. An inbox to-do has no time yet, so Start stays empty. */
+export function draftFromTask(task: Task, today: DateKey): Draft {
+  return {
+    title: task.title,
+    start: task.startTime ?? '',
+    duration: task.plannedMinutes,
+    endMode: false,
+    endRaw: null,
+    kind: task.repeat.kind,
+    date: task.date ?? today,
+    customDays: task.repeat.kind === 'custom' ? [...task.repeat.days] : [],
+    color: task.color,
+    notes: task.notes,
+  }
+}
+
+/** Duplicate: everything copied, with "copy" added to the title. */
+export function copyDraft(task: Task, today: DateKey): Draft {
+  return { ...draftFromTask(task, today), title: `${task.title} copy` }
+}
+
+/**
+ * The duration choices for the picker: 5 to 480 in 5-minute steps, plus the task's own length
+ * if it is not on that grid (a task made some other way), so the picker never shows a wrong value.
+ */
+export function durationChoices(current: number): readonly number[] {
+  if (DURATION_OPTIONS.includes(current)) return DURATION_OPTIONS
+  return [...DURATION_OPTIONS, current].sort((a, b) => a - b)
+}
+
+// ---- "Apply changes to" ----
+
+export type Scope = 'day' | 'future'
+
+/** The two descriptions under "Apply changes to", naming the real date ("Tue, Oct 6"). */
+export function scopeDescriptions(date: DateKey, today: DateKey): Record<Scope, string> {
+  const day = formatDay(date, today)
+  return {
+    day: `Changes ${day}. The routine stays as it is.`,
+    future: `From ${day} on. Past days keep their original plan.`,
+  }
+}
+
+/**
+ * What "This day only" can change: the title, color, start time and length of that day's block.
+ * Only the fields that differ from the routine are returned, so a change made earlier to that
+ * day is not overwritten by the routine's own values.
+ */
+export function dayOnlyPatch(
+  task: Task,
+  d: Draft,
+): Partial<Pick<Task, 'title' | 'color' | 'startTime' | 'plannedMinutes'>> {
+  return {
+    ...(d.title.trim() !== task.title ? { title: d.title.trim() } : {}),
+    ...(d.color !== task.color ? { color: d.color } : {}),
+    ...(d.start !== '' && d.start !== task.startTime ? { startTime: d.start } : {}),
+    ...(d.duration !== task.plannedMinutes ? { plannedMinutes: d.duration } : {}),
+  }
+}
+
+/** True if the form changes something a single day cannot hold: the repeat, the date or the notes. */
+export function changesMoreThanOneDay(task: Task, d: Draft): boolean {
+  const days = (days: number[]) => [...days].sort((a, b) => a - b).join()
+  const sameRepeat =
+    d.kind === task.repeat.kind && (d.kind !== 'custom' || days(d.customDays) === days(task.repeat.days))
+  const sameDate = d.kind !== 'once' || d.date === (task.date ?? d.date)
+  return !sameRepeat || !sameDate || d.notes.trim() !== task.notes.trim()
 }
