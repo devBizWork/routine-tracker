@@ -54,6 +54,11 @@
   yet known. The panel now opens the moment the fifth tap lands (it no longer waits for the
   database) and shows a red notice with the real error if the database cannot be read. After
   the next deploy, open it in Edge and record the message here.
+- **Step 3 fix (Duration label wrapped, "pm" on its own line): fixed, needs iPhone check.**
+  On the New block sheet, "Duration · ends 8:28 pm" did not fit in a half-width box. Start and
+  Duration now share the row 1 : 1.4 (Duration is wider) and both boxes keep their text on one
+  line. Measured at 375 and 390 px with the longest captions ("Duration · ends 12:43 pm",
+  "End · 2 h 15 min"): one line, with room to spare. Not yet seen on the real iPhone.
 - **Step 3 fix (keyboard pushes the New block sheet off screen): fixed, needs iPhone check.**
   Found on the iPhone: opening the sheet opened the keyboard, and Safari slid the whole sheet
   up so Cancel, the title and Save went off the top. The sheet's frame now follows the part of

@@ -22,10 +22,10 @@ function openPicker(event: MouseEvent<HTMLInputElement>) {
 function Face({ caption, children }: { caption: string; children: ReactNode }) {
   return (
     <>
-      <span aria-hidden="true" className="text-12 font-semibold text-muted">
+      <span aria-hidden="true" className="text-12 font-semibold whitespace-nowrap text-muted">
         {caption}
       </span>
-      <span aria-hidden="true" className="text-17 font-bold">
+      <span aria-hidden="true" className="text-17 font-bold whitespace-nowrap">
         {children}
       </span>
     </>
