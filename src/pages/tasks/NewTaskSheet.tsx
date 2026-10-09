@@ -265,7 +265,9 @@ export function NewTaskSheet({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          {/* Start is short ("9:30 am"); Duration gets the wider share so "Duration · ends
+              8:28 pm" fits on one line. */}
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
             <TimeBox
               caption="Start"
               display={draft.start === '' ? 'Choose' : formatTime(draft.start, timeFormat)}
