@@ -1,5 +1,21 @@
 # HANDOFF: Routine Tracker
 
+## START HERE (new session, read this block first)
+
+1. Read this file and `CLAUDE.md` only. Do NOT read everything up front: `PROGRESS.md` is long (read just the
+   newest step and the "Known bugs" section), and design files are large (open only the screens the
+   current step names).
+2. Tell the user what you understood in 3 lines, then **wait for their "Step N of 16" prompt**.
+3. Follow section 3 (workflow) exactly: branch `step-N`, `npm run check`, PR with a walkthrough, the user
+   merges, then the tag commands (with the word `tag`).
+
+**Keep a session small** (a step's work fills most of a session, so do one step per session):
+- Filter command output (`npm run check 2>&1 | grep -E "error|FAIL|Tests |built in"`), never dump logs.
+- Check screens with DOM measurements (`javascript_tool`), not screenshots (they are tiny and costly).
+- Reuse the pieces in section 7b instead of re-reading source files; read a file only to edit it.
+- When the session is about 70% full: update section 4 and 5 below and `PROGRESS.md`, commit them on a
+  small branch (`handoff-update`), open a PR, and tell the user to start a fresh session.
+
 Written at the end of Step 5 so a fresh session can carry on without the earlier conversation.
 Read this first, then `CLAUDE.md` (the rules), `docs/feature-spec.md` (the product) and
 `PROGRESS.md` (a detailed log of every step, bug and decision). Where they disagree, `CLAUDE.md`
@@ -71,8 +87,8 @@ app, install walkthrough, quiet hours, 12/24-hour time, tolerances. Scoring form
 
 ## 4. State of the repository (checked at handoff)
 
-`main` = `1936298` (Merge pull request #5, Step 4). Tags on GitHub: `step-1` (fecdf7f), `step-2` (397d30c),
-`step-3` (fafaf65), `step-4` (1936298).
+`main` = `13acd4c` (Merge pull request #6, Step 5). Tags on GitHub: `step-1` (fecdf7f), `step-2` (397d30c),
+`step-3` (fafaf65), `step-4` (1936298), `step-5` (on the Step 5 merge).
 
 | PR | Branch | What | Status | CI |
 | --- | --- | --- | --- | --- |
@@ -81,11 +97,9 @@ app, install walkthrough, quiet hours, 12/24-hour time, tolerances. Scoring form
 | #3 | step-3-fix | keyboard pushed the New block sheet off screen (visualViewport fix) | merged | green |
 | #4 | step-3-fix-duration-label | "Duration · ends 8:28 pm" wrapped onto two lines | merged | green |
 | #5 | step-4 | edit, duplicate, delete, swipe, schedule Inbox | merged | green |
-| **#6** | **step-5** | **Today screen as a live timeline** | **OPEN, not merged** | **green** |
+| #6 | step-5 | Today screen as a live timeline (+ this HANDOFF.md) | merged | green |
 
-PR #6 has no review comments and no unresolved threads. Last commit on it before this handoff file:
-`9e77301 Step 5: the Today screen as a live timeline`. **This HANDOFF.md is committed on the same
-branch** so it merges with Step 5.
+No open PRs and no unresolved review comments at the time of the last update.
 
 Steps 1 and 2 were committed straight to `main` before the PR rule existed (commits `fecdf7f` Step 1,
 `397d30c` Step 2, plus `56a225f` a Developer-panel fix). Old merged branches still exist locally and
@@ -111,8 +125,9 @@ on GitHub; they can be deleted.
 
 ## 5. Remaining work, in order
 
-**Very next step: the user merges PR #6**, runs the tag commands for `step-5`, tests on the iPhone and
-reports back. Then they send the **Step 6** prompt. Do not start any step the user has not sent.
+**Very next step:** the user tests Step 5 on their iPhone and reports (see the test log in 7c). Fix anything
+they report in its own small branch/PR first (like `step-3-fix`), then they send the **Step 6** prompt.
+Do not start any step the user has not sent.
 
 The user supplies each step's prompt. Known from the conversation:
 - **Step 6: logging** (Start/Stop timer, "Done as planned", Skipped, manual times, notes; the Log time
@@ -175,6 +190,35 @@ pass**, production build passes (about 1 s). CI (`checks`) is green on PR #6.
 Layout: `src/data/` (Dexie, API, rules, formatting), `src/app/` (shell, `BottomSheet`, `ActionSheet`,
 `useNow`, `visibleArea`), `src/pages/` (screens; `tasks/`, `today/` subfolders), `config/` (PWA manifest,
 security policy, tests that read tokens and design files), `.github/workflows/` (`deploy.yml`, `ci.yml`).
+
+### 7b. Code map: reuse these, do not rewrite them
+
+- **Data API** (`import { ... } from '../data'`): `listTasks, getTask, createTask, updateTask,
+  updateTaskFromDate, updateTaskForDay, deleteTask, deleteTaskFromDate, taskLogCount, getDay (creates a
+  day), peekDay (read only), updateOccurrence, getSettings/readSettings/updateSettings, getMeta/setMeta,
+  counts, loadSampleData, eraseAllData, today()`. Helpers: `occursOn, hasEnded, isUnlogged, findOverlaps,
+  formatTime/Range/Clock/HourLabel/Duration/Repeat/Day/DateLabel, toDateKey/addDays`, `categoryColor`.
+  Types: `Task, Occurrence, Settings` (shapes in `CLAUDE.md`). Tests use `createDataApi({ db, now })` via
+  `src/data/test-utils.ts` (`setup()` gives a fresh database and a movable clock).
+- **Hooks:** `useLiveQuery(query)` and `useLiveQueryResult` (`src/data/useLiveQuery.ts`), `useNow(ms)`
+  (`src/app/useNow.ts`, also refreshes on return to foreground).
+- **UI parts:** `BottomSheet` (full or `fit="content"`, swipe/backdrop/Escape, keyboard-safe),
+  `ActionSheet` (iPhone-style menu), `ComingSoonToast`, `PageHeader`, `SwipeRow`, `TaskSheet` (new /
+  edit / duplicate / schedule modes), `TimeBox/DateBox/SelectBox` (native pickers).
+- **Today pieces:** `src/pages/today/plan.ts` (all timeline and Now/Next rules, unit tested),
+  `Timeline`, `BlockView` (looks: current, upcoming, unknown, done, skipped), `NowNextCard`, `EmptyStates`.
+- **Tokens:** every color, radius (`rounded-14`), font size (`text-13-5` = 13.5px) and shadow is in
+  `src/styles/tokens.css`; add new colors there only.
+
+### 7c. iPhone test log (fill in after each merge)
+
+| Step | Tested on iPhone? | Result / notes |
+| --- | --- | --- |
+| 1 | yes | worked, Add to Home Screen worked |
+| 2 | yes | Storage "Persistent" reported; Developer panel worked |
+| 3 and fixes | yes | keyboard bug and Duration label wrap were found here and fixed |
+| 4 | partly | red line under the arrow (fixed); swipe feel and Delete menu not reported |
+| 5 | pending | walkthrough is in PR #6 |
 
 ## 8. Known bugs, unverified items, flaky tests, gotchas
 
