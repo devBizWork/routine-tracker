@@ -3,6 +3,22 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 5:** the Today screen as a live timeline. Tag: `step-5` (added after the merge).
+  - Header: the full date, "Today", the Day score chip showing "–" and the sound button (both say
+    "Coming soon" when tapped until Steps 7 and 11).
+  - A timeline from Settings dayStart to dayEnd with an hour label and line for each hour. Blocks are
+    placed by start time, sized by length (80 px an hour, as in the design), in their category color,
+    showing the title and "6:30 – 7:30 · 60 min". Blocks that overlap in time sit side by side.
+  - The now line (with a time label) moves every 15 seconds. The block it crosses gets the in-progress
+    look (outline, shadow, NOW badge). The timeline opens scrolled so the line is a third of the way down.
+  - The pinned Now / Next card: block, minutes:seconds left, progress bar, next block. Also "First up: …
+    at …", "Free until … · Next: …" and "Day done" (with a Review day button, Coming soon).
+  - Empty states: no tasks at all shows the first-run screen ("Add a time block" opens the New block
+    sheet; "Or jot a to-do in the inbox" opens Tasks with the quick-add field ready); tasks but none
+    today shows "Nothing planned today" with an Add button.
+  - Block taps and the round quick buttons say "Coming soon" (Step 6).
+  - The screen refreshes when the app returns to the foreground and at midnight.
+  - 37 new tests for the timeline rules (`src/pages/today/plan.test.ts`) and the time labels.
 - **Step 4:** editing tasks, duplicate, delete, swipe actions, scheduling Inbox to-dos. Tag: `step-4`
   (added after the merge).
   - Tapping a row opens the sheet in edit mode: "Edit routine" or "Edit block" (one-offs), with
@@ -57,6 +73,14 @@
 
 ## Known bugs / not yet verified
 
+- **Step 5 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a
+  pretend clock to reach every state of the Now / Next card, the midnight rollover and returning to the
+  app. Only the phone can show: how the screen behaves when you lock and unlock it or switch apps, the
+  scrolling feel, and that it all works as a Home Screen app in airplane mode.
+- **Block looks beyond Step 5.** A block that is over and has no log shows as "Unknown". Blocks that
+  already have a log show as done (check) or skipped (greyed, struck through), but the thin actual bar,
+  the "+15 min" off-plan tag and the running-timer chip from the design arrive with logging in Step 6.
+
 - **Step 4 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a real
   mouse drag for the swipe. Only the phone can confirm: the finger swipe feel and that it does not
   fight with scrolling, the Delete menu and its swipe-down, and the edit sheet with the keyboard open.
@@ -97,6 +121,26 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 5 rules (in `src/pages/today/plan.ts`).**
+  - **Scale and spacing copied from Main.html:** 80 px an hour; a block starts 1 px below its time and
+    ends 3 px short; a 30-minute block is 37 px tall. A block is one line (title and time) below 50 px
+    and two lines (title, then time and length) at 50 px or more. A very short block is at least 30 px.
+  - **The timeline widens** (to whole hours) to include a block outside the day hours in Settings, so a
+    4:30 am workout is never out of reach.
+  - **Overlap:** blocks that overlap in time share the width side by side (two overlapping get half
+    each; three get a third). Blocks that only touch do not overlap. A block shorter than the minimum
+    height counts as taking that height, so it never draws over the next block.
+  - **Now line:** moves every 15 seconds; its label is the minute in progress without am/pm ("10:15",
+    "21:20" in 24-hour time). The card's countdown updates every second.
+  - **Which block is "now":** if several overlap the now line, the one that started last. Every block
+    the line crosses gets the in-progress look.
+  - **Card wording** always includes am/pm in 12-hour time ("Free until 10:30 am · Next: …").
+  - **Opening and coming back:** the timeline scrolls to the now line when it first appears, when the
+    date changes, and when you return after the app was away for a minute or more. A shorter trip away
+    refreshes the clock and card but leaves your scroll position alone.
+  - **Today's blocks are created on open** (`getDay`), like any day; tasks added later appear at once.
+  - **Tap areas:** a short block gets an invisible tap area of at least 44 px.
 
 - **Step 4 rules (in `src/data/api.ts`).**
   - **A deleted or replaced routine keeps its row** with an end date (`activeTo`) so days nobody has

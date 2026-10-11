@@ -40,10 +40,13 @@ export type { DataApi, NewTask, OccurrencePatch, SettingsPatch, TaskPatch } from
 export { CATEGORIES, DEFAULT_CATEGORY, categoryColor } from './categories'
 export { addDays, dayOfWeek, isDateKey, parseDateKey, toDateKey } from './dates'
 export {
+  formatClock,
   formatDateLabel,
   formatDay,
   formatDuration,
+  formatHourLabel,
   formatMinutesAsTime,
+  formatRange,
   formatRepeat,
   formatTime,
   type TimeFormat,

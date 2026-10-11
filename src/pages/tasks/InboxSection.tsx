@@ -4,7 +4,7 @@ import { rowActions } from './rowActions'
 import { SwipeRow } from './SwipeRow'
 
 /** The row at the bottom of the Inbox: type a to-do, press Return, it joins the Inbox. */
-export function QuickAdd() {
+export function QuickAdd({ autoFocus = false }: { autoFocus?: boolean }) {
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
 
@@ -45,6 +45,7 @@ export function QuickAdd() {
         <input
           id="quick-add"
           type="text"
+          autoFocus={autoFocus}
           enterKeyHint="done"
           autoComplete="off"
           placeholder="Add a to-do without a time"

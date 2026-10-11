@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { formatDateLabel, formatDay, formatDuration, formatMinutesAsTime, formatRepeat, formatTime } from './format'
+import {
+  formatClock,
+  formatDateLabel,
+  formatDay,
+  formatDuration,
+  formatHourLabel,
+  formatMinutesAsTime,
+  formatRange,
+  formatRepeat,
+  formatTime,
+} from './format'
 
 describe('formatTime', () => {
   it('writes 12-hour times like the designs', () => {
@@ -71,5 +81,36 @@ describe('formatDay', () => {
 
   it('adds the year for another year', () => {
     expect(formatDay('2027-01-02', '2026-10-08')).toBe('Sat, Jan 2, 2027')
+  })
+})
+
+describe('timeline time labels', () => {
+  it('formatClock writes a time without am/pm', () => {
+    expect(formatClock(390)).toBe('6:30')
+    expect(formatClock(720)).toBe('12:00')
+    expect(formatClock(0)).toBe('12:00')
+    expect(formatClock(13 * 60 + 5)).toBe('1:05')
+    expect(formatClock(390, '24h')).toBe('06:30')
+    expect(formatClock(13 * 60 + 5, '24h')).toBe('13:05')
+  })
+
+  it('formatClock shows the minute that is in progress, like a clock (it rounds down)', () => {
+    expect(formatClock(21 * 60 + 20.5)).toBe('9:20')
+    expect(formatClock(21 * 60 + 20.99, '24h')).toBe('21:20')
+  })
+
+  it('formatRange writes the time line of a block', () => {
+    expect(formatRange(390, 450)).toBe('6:30 – 7:30')
+    expect(formatRange(11 * 60 + 15, 12 * 60)).toBe('11:15 – 12:00')
+    expect(formatRange(390, 450, '24h')).toBe('06:30 – 07:30')
+  })
+
+  it('formatHourLabel writes the hour lines', () => {
+    expect(formatHourLabel(7)).toBe('7 am')
+    expect(formatHourLabel(12)).toBe('12 pm')
+    expect(formatHourLabel(0)).toBe('12 am')
+    expect(formatHourLabel(23)).toBe('11 pm')
+    expect(formatHourLabel(7, '24h')).toBe('07:00')
+    expect(formatHourLabel(23, '24h')).toBe('23:00')
   })
 })

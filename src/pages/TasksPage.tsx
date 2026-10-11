@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useLocation } from 'react-router'
 import { ActionSheet } from '../app/ActionSheet'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { PageHeader } from '../app/PageHeader'
@@ -68,6 +69,8 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 export function TasksPage() {
+  // "Or jot a to-do in the inbox" on the Today screen arrives here with the quick-add field ready.
+  const focusQuickAdd = (useLocation().state as { focusQuickAdd?: boolean } | null)?.focusQuickAdd === true
   const allTasks = useLiveQuery(listTasks)
   const settings = useLiveQuery(readSettings)
   const timeFormat = settings?.timeFormat ?? '12h'
@@ -172,7 +175,7 @@ export function TasksPage() {
                 onSchedule={() => openSheet({ kind: 'schedule', task })}
               />
             ))}
-            <QuickAdd />
+            <QuickAdd autoFocus={focusQuickAdd} />
           </Section>
 
           <Section
