@@ -2,6 +2,10 @@
 
 ## START HERE (new session, read this block first)
 
+**The user starts a new session by pasting this one message** (so the instructions below and the first message always agree):
+
+> Read HANDOFF.md and CLAUDE.md. From PROGRESS.md read only the newest step and the "Known bugs" section. Step N is merged and tagged. Here is what I found when I tested it on my iPhone: (findings, or "everything worked"). Tell me in 3 lines what you understood, then wait for my next step prompt.
+
 1. Read this file and `CLAUDE.md` only. Do NOT read everything up front: `PROGRESS.md` is long (read just the
    newest step and the "Known bugs" section), and design files are large (open only the screens the
    current step names).
