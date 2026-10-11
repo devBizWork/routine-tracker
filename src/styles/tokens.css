@@ -87,6 +87,7 @@
   /* ---- Shadows ---- */
   --shadow-fab: 0 10px 24px rgb(11 110 153 / 0.32); /* the round + button */
   --shadow-segment: 0 1px 3px rgb(14 26 32 / 0.14); /* selected segment of a switch */
+  --shadow-inprogress: 0 8px 20px rgb(11 110 153 / 0.18); /* the block the now line is inside */
 
   /* ---- Font sizes used in the screens ---- */
   --text-*: initial;

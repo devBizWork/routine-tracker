@@ -64,3 +64,27 @@ export function formatDateLabel(date: DateKey, today: DateKey): string {
   const sameYear = date.slice(0, 4) === today.slice(0, 4)
   return format(parseDateKey(date), sameYear ? 'EEE, MMM d' : 'EEE, MMM d, yyyy')
 }
+
+/**
+ * A time without am/pm, as the timeline blocks and the now-line label write it:
+ * 6:30 (12h) or 06:30 (24h). Minutes after midnight in, so 1440 reads as 00:00 / 12:00.
+ */
+export function formatClock(minutes: number, timeFormat: TimeFormat = '12h'): string {
+  const total = Math.floor(minutes) % (24 * 60)
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  if (timeFormat === '24h') return `${pad(h)}:${pad(m)}`
+  return `${h % 12 === 0 ? 12 : h % 12}:${pad(m)}`
+}
+
+/** "6:30 – 7:30" (12h) or "06:30 – 07:30" (24h): the time line on a block. */
+export function formatRange(startMinutes: number, endMinutes: number, timeFormat: TimeFormat = '12h'): string {
+  return `${formatClock(startMinutes, timeFormat)} – ${formatClock(endMinutes, timeFormat)}`
+}
+
+/** The label at the start of an hour line: "7 am", "12 pm" (12h) or "07:00" (24h). */
+export function formatHourLabel(hour: number, timeFormat: TimeFormat = '12h'): string {
+  if (timeFormat === '24h') return `${pad(hour % 24)}:00`
+  const h = hour % 24
+  return `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'am' : 'pm'}`
+}
