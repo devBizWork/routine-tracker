@@ -3,6 +3,33 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 6:** logging what actually happened, the timer, and how each block shows its status. Tag: `step-6`
+  (added after the merge).
+  - **Log time sheet** (`src/pages/log/LogSheet.tsx`, from `LogTime.html`): the block (colour, title, planned
+    time), a Close button, "Done as planned" (copies the planned start and end), "Skipped", Started and Ended with
+    the phone's own time pickers, the progress line ("57 of 90 min · partial", "Task score –" until Step 7), an
+    optional Note and Save log. A block that already has a log opens filled in, with a "Clear log" link that asks
+    first and returns the block to Unknown. Closing with unsaved changes asks "Discard your changes?".
+  - **Timer:** Start saves `timerStartedAt` (a moment, not a counter). The sheet shows "TIMER RUNNING", the elapsed
+    time, "Started 9:15 am · 15 min after plan" and a STOP button; the elapsed time is always worked out from the
+    saved start, so it is right after the app was closed. Stop saves Started and Ended, marks the block done and
+    leaves the sheet open with both filled in. A block with no log also has a "Start timer" card in the sheet.
+  - **One timer at a time:** starting another asks "Stop Deep work and start Client check-in call?" (the first
+    timer's time is saved to its log). Cancel keeps the first one running.
+  - **"Still doing Deep work?"** (`src/app/StillDoingPrompt.tsx`, for the whole app): a timer still running 2 hours
+    after the block's planned end is asked about when the app is opened or comes back to the front, never while it
+    is in use. "Stop at planned end" saves the log with the planned end; "Keep going" leaves it running until the
+    app is next opened.
+  - **Block looks on Today** (`BlockView.tsx`, from `States.html`): upcoming (play starts the timer), in progress
+    (outline, "Timer 57:12 · since 9:15", stop opens the sheet), done as planned (blue check), done off plan (apricot
+    check and a tag such as "+15 min", "−33 min" or "Started 60 min late"), skipped (grey, struck through) and
+    Unknown (striped, dashed edge). A thin **actual bar** left of each logged block shows the time really logged (blue
+    when it matches the plan, apricot when it drifted; a running timer draws a bar up to now).
+  - **Tapping a block:** a past, current or already logged block opens Log time; a block still to come opens the
+    edit sheet with "This day only" already selected. The round button starts the timer on a current or coming
+    block and opens Log time on the others.
+  - 74 new tests (342 in all): the logging rules (`src/data/log.test.ts`), the timer against the real database code
+    (`src/data/step6.test.ts`), the form rules (`logForm.test.ts`) and the actual bars (`actuals.test.ts`).
 - **Step 5 fix 2 ("Or jot a to-do in the inbox"):** found on the iPhone's first-run screen. The link only
   moved to the Tasks page; the keyboard did not open there (iOS only opens it when the field is focused
   during the tap itself, and this focused it after moving screens). It now opens a small "New to-do" sheet
@@ -91,6 +118,15 @@
 
 ## Known bugs / not yet verified
 
+- **Step 6 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a pretend clock: every
+  block look, the actual bars, starting and stopping a timer, the one-timer question, "Done as planned", "Skipped",
+  typed times (and the "Ended must be after Started" message), Clear log, prefilled logs, the "Still doing...?"
+  question, and a coming block opening the edit sheet on "This day only". Only the phone can confirm: the native
+  time pickers on Started and Ended, the keyboard with the Note field, the timer after locking the phone or closing
+  the app for a while, and that "Still doing...?" appears when you reopen the Home Screen app.
+- **A log stays inside one day.** A timer running past midnight is saved ending at 11:59 pm of its own day.
+- **Today only.** Logging exists for Today's blocks. Other days arrive with the Calendar and Day screens.
+
 - **Step 5 fix 2 not yet checked on the iPhone.** In a desktop browser at 390 px the sheet opens over Today with
   the field focused, Add is disabled until something is typed, Return adds it, the screen switches to Tasks
   and the to-do is in the Inbox. Still to confirm on the phone: the keyboard opens with the sheet.
@@ -148,6 +184,24 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 6 rules (in `src/data/log.ts`).**
+  - **Stop saves at once.** Stopping a timer saves Started and Ended and marks the block done straight away, so a
+    log is never lost; the sheet stays open to adjust the times or add a note, and Save log saves those edits.
+  - **Off plan means:** the start is more than the on-time tolerance (10 min) from the planned start, or, if the
+    start was fine, the length differs from the plan by more than the length tolerance (10%). Both come from Settings.
+    A late or early start is shown before the length ("Started 60 min late" wins over "+15 min").
+  - **A timer stopped within its first minute** is saved as one minute, so Ended is always after Started.
+  - **Tapping:** a block that already has a log, or a timer, always opens Log time, even if it is still to come
+    (the edit sheet is only for a block with no log that has not started).
+  - **Started and Ended are disabled while the timer runs** (Started shows when it began, Ended shows "now").
+    Save log then saves only the note and the timer carries on.
+  - **A timer cannot start on a block that already has a log** (Clear log first); Skipped and Done as planned stop a
+    running timer.
+  - **"Still doing...?"** counts 2 hours from the planned end, or from the timer's own start if it began after the
+    planned end. "Stop at planned end" for a timer that began after the planned end keeps the planned length.
+  - **Note-only logs** are not saved without times (Save log stays off); a note typed before Done as planned,
+    Skipped or Stop is saved with them.
 
 - **Step 5 rules (in `src/pages/today/plan.ts`).**
   - **Scale and spacing copied from Main.html:** 80 px an hour; a block starts 1 px below its time and

@@ -1,5 +1,6 @@
-import type { Occurrence, TimeFormat } from '../../data'
+import type { Occurrence, TimeFormat, Tolerances } from '../../data'
 import { formatClock, formatHourLabel } from '../../data'
+import { actualBars } from './actuals'
 import { BlockView } from './BlockView'
 import {
   blockLook,
@@ -13,7 +14,8 @@ import {
 /**
  * The day as a vertical timeline (design/screens/Main.html): an hour label and line for every
  * hour, each block placed by its start and sized by its length, and the now line on top.
- * Blocks that overlap in time sit side by side.
+ * Blocks that overlap in time sit side by side. A thin bar left of a block is the time actually
+ * logged (or, for a running timer, the time so far).
  */
 export function Timeline({
   occurrences,
@@ -21,7 +23,10 @@ export function Timeline({
   nowMinutes,
   timeFormat,
   repeating,
-  onBlockTap,
+  tolerances,
+  nowMs,
+  onBlockOpen,
+  onBlockQuick,
 }: {
   occurrences: readonly Occurrence[]
   range: TimeRange
@@ -30,9 +35,16 @@ export function Timeline({
   timeFormat: TimeFormat
   /** Ids of the tasks that repeat (their blocks get the repeat mark). */
   repeating: ReadonlySet<string>
-  onBlockTap: () => void
+  tolerances: Pick<Tolerances, 'onTimeMin' | 'lengthPct'>
+  /** The moment now (ms); running timers are worked out from it. */
+  nowMs: number
+  /** A tap on a block's body. */
+  onBlockOpen: (occurrence: Occurrence) => void
+  /** A tap on a block's round button. */
+  onBlockQuick: (occurrence: Occurrence) => void
 }) {
   const placed = placeBlocks(occurrences, range)
+  const bars = actualBars(occurrences, nowMs, range, tolerances)
   const nowInRange = nowMinutes >= range.start && nowMinutes <= range.end
 
   return (
@@ -49,6 +61,19 @@ export function Timeline({
           </span>
           <span className="h-px flex-1 bg-line" />
         </div>
+      ))}
+
+      {/* The actual bars sit in the gap between the hour labels and the blocks. */}
+      {bars.map((bar) => (
+        <div
+          key={bar.id}
+          aria-hidden="true"
+          data-actual-bar={bar.running ? 'running' : bar.offPlan ? 'off-plan' : 'on-plan'}
+          className={`absolute left-[54px] w-1.5 ${bar.running ? 'rounded-t-3' : 'rounded-3'} ${
+            bar.offPlan ? 'bg-missed' : 'bg-primary'
+          }`}
+          style={{ top: bar.top, height: bar.height }}
+        />
       ))}
 
       <div className="absolute inset-y-0 right-0 left-[66px]">
@@ -70,7 +95,10 @@ export function Timeline({
               look={blockLook(block.occurrence, nowMinutes)}
               timeFormat={timeFormat}
               repeats={repeating.has(block.occurrence.taskId)}
-              onTap={onBlockTap}
+              tolerances={tolerances}
+              nowMs={nowMs}
+              onOpen={() => onBlockOpen(block.occurrence)}
+              onQuick={() => onBlockQuick(block.occurrence)}
             />
           </div>
         ))}

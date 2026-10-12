@@ -22,6 +22,10 @@ export const {
   getDay,
   peekDay,
   updateOccurrence,
+  peekOccurrence,
+  runningTimers,
+  startTimer,
+  stopTimer,
   getSettings,
   readSettings,
   updateSettings,
@@ -51,6 +55,7 @@ export {
   formatTime,
   type TimeFormat,
 } from './format'
+export * from './log'
 export { findOverlaps, overlapMessage } from './overlap'
 export { hasEnded, occursOn } from './repeat'
 export { isTimeOfDay, minutesToTime, timeToMinutes } from './time'

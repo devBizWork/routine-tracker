@@ -168,7 +168,13 @@ describe('how a block looks', () => {
 
   it('a block with a note or a running timer is not "unknown" when it is over', () => {
     expect(blockLook(block('A', '09:00', 30, { note: 'ran late' }), hm(11))).toBe('upcoming')
-    expect(blockLook(block('B', '09:00', 30, { timerStartedAt: 1 }), hm(11))).toBe('upcoming')
+  })
+
+  it('a block whose timer is running is "running", before, during or after its planned time', () => {
+    const timing = block('B', '09:00', 30, { timerStartedAt: 1 })
+    expect(blockLook(timing, hm(8))).toBe('running')
+    expect(blockLook(timing, hm(9, 10))).toBe('running')
+    expect(blockLook(timing, hm(11))).toBe('running')
   })
 })
 
