@@ -3,6 +3,12 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 5 fix 2 ("Or jot a to-do in the inbox"):** found on the iPhone's first-run screen. The link only
+  moved to the Tasks page; the keyboard did not open there (iOS only opens it when the field is focused
+  during the tap itself, and this focused it after moving screens). It now opens a small "New to-do" sheet
+  over Today (`TodoSheet.tsx`, keyboard opens with it). Return or Add puts the to-do in the Inbox, a note says
+  "Added to your Inbox (Tasks tab)", and Cancel with text typed asks "Discard this to-do?". The old
+  `focusQuickAdd` navigation code was removed. Branch `step-5-fix-todo-sheet`.
 - **Step 5 fix (after the first iPhone test):** four things found on the phone. Branch `step-5-fix`.
   - **Play button too big:** on a short running block (a 15-minute block is about 30 px tall) the round
     play button and the second text line stuck out of the block. A running block now has two lines only
@@ -26,7 +32,7 @@
   - The pinned Now / Next card: block, time left in whole minutes (changed in the Step 5 fix), progress bar, next block. Also "First up: …
     at …", "Free until … · Next: …" and "Day done" (with a Review day button, Coming soon).
   - Empty states: no tasks at all shows the first-run screen ("Add a time block" opens the New block
-    sheet; "Or jot a to-do in the inbox" opens Tasks with the quick-add field ready); tasks but none
+    sheet; "Or jot a to-do in the inbox" opened the Tasks tab; changed in Step 5 fix 2 to a New to-do sheet); tasks but none
     today shows "Nothing planned today" with an Add button.
   - Block taps and the round quick buttons say "Coming soon" (Step 6).
   - The screen refreshes when the app returns to the foreground and at midnight.
@@ -84,6 +90,10 @@
   - README "Deploy" section with the exact steps.
 
 ## Known bugs / not yet verified
+
+- **Step 5 fix 2 not yet checked on the iPhone.** In a desktop browser at 390 px the sheet opens over Today with
+  the field focused, Add is disabled until something is typed, Return adds it, and the to-do appears in the
+  Inbox. Still to confirm on the phone: the keyboard opens with the sheet.
 
 - **Step 5 fix not yet checked on the iPhone.** Measured in a desktop browser at 390 px with a pretend
   clock: a 15-minute running block (30 px) holds its 22 px play button with 4 px to spare and a 44 px tap

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
 import { getDay, hasEnded, listTasks, peekDay, readSettings, toDateKey } from '../data'
@@ -20,6 +19,7 @@ import {
   yAt,
 } from './today/plan'
 import { TaskSheet } from './tasks/TaskSheet'
+import { TodoSheet } from './tasks/TodoSheet'
 
 /** The now line moves in steps of this many seconds. */
 const LINE_STEP_SECONDS = 15
@@ -27,7 +27,6 @@ const LINE_STEP_SECONDS = 15
 const RESCROLL_AFTER_MS = 60_000
 
 export function TodayPage() {
-  const navigate = useNavigate()
   // Ticks every second (for the countdown) and again the moment the app returns to the
   // foreground. The date follows it, so at midnight the screen moves on to the next day.
   const now = useNow(1000)
@@ -43,6 +42,9 @@ export function TodayPage() {
   const day = useLiveQuery(useCallback(() => peekDay(date), [date]))
 
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [todoOpen, setTodoOpen] = useState(false)
+  const [added, setAdded] = useState(0) // changes with every to-do added, to show the note
+  const hideAdded = useCallback(() => setAdded(0), [])
   const [soon, setSoon] = useState(0)
   const comingSoon = () => setSoon((n) => n + 1)
   const hideSoon = useCallback(() => setSoon(0), [])
@@ -105,7 +107,7 @@ export function TodayPage() {
       {ready && tasks.length === 0 && (
         <FirstRun
           onAddBlock={() => setSheetOpen(true)}
-          onJotTodo={() => navigate('/tasks', { state: { focusQuickAdd: true } })}
+          onJotTodo={() => setTodoOpen(true)}
         />
       )}
 
@@ -143,7 +145,17 @@ export function TodayPage() {
         />
       )}
 
+      {todoOpen && (
+        <TodoSheet
+          onClosed={(wasAdded) => {
+            setTodoOpen(false)
+            if (wasAdded) setAdded((n) => n + 1)
+          }}
+        />
+      )}
+
       <ComingSoonToast tap={soon} onDone={hideSoon} />
+      <ComingSoonToast tap={added} onDone={hideAdded} message="Added to your Inbox (Tasks tab)" />
     </div>
   )
 }
