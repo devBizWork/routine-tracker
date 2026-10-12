@@ -6,7 +6,8 @@ import { createTask } from '../../data'
 /**
  * A small sheet for jotting a to-do that has no time yet ("Or jot a to-do in the inbox" on the
  * first-run Today screen). It opens on the spot, so the phone's keyboard comes up with it, and
- * Add puts the to-do in the Inbox on the Tasks tab. `onClosed(true)` says a to-do was added.
+ * Add puts the to-do in the Inbox on the Tasks tab. `onClosed(true)` says a to-do was added, and the
+ * screen then moves to the Tasks tab so the person sees where it went.
  */
 export function TodoSheet({ onClosed }: { onClosed: (added: boolean) => void }) {
   const titleId = useId()
