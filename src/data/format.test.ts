@@ -7,6 +7,7 @@ import {
   formatHourLabel,
   formatMinutesAsTime,
   formatRange,
+  formatSpan,
   formatRepeat,
   formatTime,
 } from './format'
@@ -103,6 +104,13 @@ describe('timeline time labels', () => {
     expect(formatRange(390, 450)).toBe('6:30 – 7:30')
     expect(formatRange(11 * 60 + 15, 12 * 60)).toBe('11:15 – 12:00')
     expect(formatRange(390, 450, '24h')).toBe('06:30 – 07:30')
+  })
+
+  it('formatSpan writes am/pm once when both ends share it', () => {
+    expect(formatSpan('06:30', '07:30')).toBe('6:30 – 7:30 am')
+    expect(formatSpan('21:00', '21:40')).toBe('9:00 – 9:40 pm')
+    expect(formatSpan('11:30', '12:30')).toBe('11:30 am – 12:30 pm')
+    expect(formatSpan('06:30', '07:30', '24h')).toBe('06:30 – 07:30')
   })
 
   it('formatHourLabel writes the hour lines', () => {

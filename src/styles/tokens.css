@@ -24,6 +24,7 @@
 
   --color-missed: #f28a3c; /* Missed */
   --color-missed-text: #b4501c; /* small orange text (keeps contrast) */
+  --color-missed-soft: #fff0e4; /* pale apricot behind small orange text (4.6:1) */
 
   --color-unknown-stripe-a: #dcedf1; /* Unknown stripes */
   --color-unknown-stripe-b: #f8fcfd;

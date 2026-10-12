@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
 import {
+  defaultSettings,
   getDay,
   getTask,
   hasEnded,
@@ -15,8 +16,10 @@ import {
   type Task,
 } from '../data'
 import { useLiveQuery } from '../data/useLiveQuery'
+import { scoreDay } from '../scoring'
 import { LogSheet } from './log/LogSheet'
 import { useStartTimer } from './log/useStartTimer'
+import { reviewPath, reviewState } from './review/nav'
 import { actualSpan } from './today/actuals'
 import { FirstRun, NothingToday } from './today/EmptyStates'
 import { NowNextCard } from './today/NowNextCard'
@@ -143,14 +146,17 @@ export function TodayPage() {
   }
 
   const logging = logId === null ? undefined : blocks.find((o) => o.id === logId)
-  const tolerances = settings?.tolerances ?? { onTimeMin: 10, lengthPct: 10 }
+  const tolerances = settings?.tolerances ?? defaultSettings().tolerances
+  // The Day score so far: only blocks whose planned start has passed count.
+  const score = scoreDay(blocks, tolerances, { startedBy: minutesOfDay(now) })
+  const openReview = () => navigate(reviewPath(date), { state: reviewState('today') })
 
   const repeating = new Set(tasks.filter((t) => t.repeat.kind !== 'once').map((t) => t.id))
   const card = nowNext(spans, secondsOfDay(now))
 
   return (
     <div className="flex h-full flex-col">
-      <TodayHeader now={now} onComingSoon={comingSoon} />
+      <TodayHeader now={now} date={date} score={score} onComingSoon={comingSoon} />
 
       {ready && tasks.length === 0 && (
         <FirstRun
@@ -163,7 +169,7 @@ export function TodayPage() {
 
       {showTimeline && (
         <>
-          <NowNextCard state={card} timeFormat={timeFormat} onReviewDay={comingSoon} />
+          <NowNextCard state={card} timeFormat={timeFormat} onReviewDay={openReview} />
           <div
             ref={scroller}
             aria-label="Timeline"
@@ -199,7 +205,13 @@ export function TodayPage() {
         />
       )}
 
-      {logging && <LogSheet key={logging.id} occurrence={logging} timeFormat={timeFormat} onClosed={() => setLogId(null)} />}
+      {logging && <LogSheet
+          key={logging.id}
+          occurrence={logging}
+          timeFormat={timeFormat}
+          tolerances={tolerances}
+          onClosed={() => setLogId(null)}
+        />}
 
       {starter.dialog}
 

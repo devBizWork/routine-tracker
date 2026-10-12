@@ -41,6 +41,7 @@ export const {
 
 export { DEVELOPER_VISIBLE_KEY, createDataApi, isUnlogged } from './api'
 export type { DataApi, NewTask, OccurrencePatch, SettingsPatch, TaskPatch } from './api'
+export { defaultSettings } from './defaults'
 export { CATEGORIES, DEFAULT_CATEGORY, categoryColor } from './categories'
 export { addDays, dayOfWeek, isDateKey, parseDateKey, toDateKey } from './dates'
 export {
@@ -52,6 +53,7 @@ export {
   formatMinutesAsTime,
   formatRange,
   formatRepeat,
+  formatSpan,
   formatTime,
   type TimeFormat,
 } from './format'

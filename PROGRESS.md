@@ -3,6 +3,27 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 7:** the two adherence scores and the Day review screen. Tag: `step-7` (added after the merge).
+  - **Scoring** (`src/scoring/`, pure functions with no screens or database): task score
+    `0.5 + 0.25 T + 0.25 D` (a skipped block scores 0), timing credit T and duration credit D from the Settings
+    tolerances (10 min, 10%, zero credit at 60 min), weighting by planned minutes, the Logged score with its coverage
+    minutes, and the Day score split into Followed / Missed / Unknown. The three whole percentages always add up to
+    exactly 100 (the largest remainders round up).
+  - **Today rule:** on today only blocks whose planned start has passed count; a past day counts every block and a
+    future day none.
+  - **Display rules:** a fully logged day shows one number (no Unknown, no range); with nothing logged the Logged score
+    is "–" and the Day bar is 100% Unknown; with nothing to count the review says "Nothing to score yet".
+  - **Day review** at `#/day/:date/review` (`DayReviewPage.tsx`, from `DayReview.html`): a back link, the Logged score
+    with "Based on 160 of 200 planned minutes", the Day score with the three-part bar, "Real result: 60–80%" and the
+    legend, "Planned vs actual" with each block's score, two thin bars on a shared time scale and a note such as
+    "Started 60 min late · length on plan", and "Log remaining tasks" with a count badge (Coming soon until Step 8;
+    hidden when nothing is left to log). Back returns to Today or the Calendar, whichever opened it; opened directly
+    it returns to Today. A bad date in the address goes to Today.
+  - **Wired in:** the Today Day score chip (a ring of Followed blue and Missed apricot, the score so far, tap opens
+    the review), the "Task score" on the Log time sheet (follows what is typed), and the "Day done" Review day button.
+  - 66 new tests (408 in all): `src/scoring/scoring.test.ts` reproduces the worked example exactly (Logged 75% on
+    160 of 200 minutes; Day 60 / 20 / 20, range 60–80%) and covers 0 planned minutes, all skipped, more than double the
+    length, starting early, the Today rule and the rounding; plus the review rows and the back link.
 - **Step 6:** logging what actually happened, the timer, and how each block shows its status. Tag: `step-6`
   (added after the merge).
   - **Log time sheet** (`src/pages/log/LogSheet.tsx`, from `LogTime.html`): the block (colour, title, planned
@@ -118,6 +139,13 @@
 
 ## Known bugs / not yet verified
 
+- **Step 7 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a pretend clock and the
+  spec's worked example added to a day: the review matches the numbers in the spec, the chip, the Task score while
+  typing times, the three display states, a bad date, and the back link. Only the phone can confirm the look in the
+  Home Screen app and the scrolling of the review.
+- **No tab is highlighted on the Day review**, because its address (`#/day/...`) is not one of the four tabs.
+- **The Calendar cannot open a review yet** (the Calendar arrives in Step 8); the back link already supports it.
+
 - **Step 6 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a pretend clock: every
   block look, the actual bars, starting and stopping a timer, the one-timer question, "Done as planned", "Skipped",
   typed times (and the "Ended must be after Started" message), Clear log, prefilled logs, the "Still doing...?"
@@ -184,6 +212,20 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 7 rules (in `src/scoring/`).**
+  - **Duration credit D** is 1 within the length tolerance, then falls evenly to 0 at no time (shorter) or at double the
+    plan (longer). It is compared in minutes with a tiny margin so exactly 10% over (66 of 60) is not lost to
+    rounding (a unit test caught this).
+  - **Unknown** is any counted block with no log, including one whose timer is still running; a running timer is not
+    counted in the "Log remaining tasks" badge (it is being logged).
+  - **The chip and the big Day number show Followed**; the Logged score is the other card. With nothing logged both show
+    "–" (not 0%, which would read as failure). The review's Real result range is Followed to Followed + Unknown.
+  - **A fully logged day** shows one card ("Day score") with the Logged number, a Followed / Missed bar and no
+    Unknown row.
+  - **Score pill colours:** 100% blue, 0% pale apricot, in between neutral, Unknown dashed. New token
+    `--color-missed-soft` (#FFF0E4) for text in `--color-missed-text`.
+  - **Opening a review creates that day's blocks** if they were not made yet (the first time a date is needed).
 
 - **Step 6 rules (in `src/data/log.ts`).**
   - **Stop saves at once.** Stopping a timer saves Started and Ended and marks the block done straight away, so a
