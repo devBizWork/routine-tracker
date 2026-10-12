@@ -168,6 +168,8 @@ The user supplies each step's prompt. Known from the conversation:
   to `main` (replaced by PRs); tagging the branch before merging (tag goes on merged `main`);
   storing data in Files as the live store (iOS cannot write there; backup via share sheet is planned);
   using the old `localStorage` for the Developer switch (stored in the Dexie `meta` table).
+- **First-run "Or jot a to-do in the inbox"** opens `TodoSheet` over Today (not a move to Tasks): iOS only opens
+  the keyboard when focus happens during the tap.
 - **Step 5 rules:** 80 px an hour; block 1 px below its time, 3 px short; two-line layout from 50 px;
   min 30 px; overlap = side-by-side columns (visual min height counts); now line every 15 s (red, token `--color-now-line`), card every
   1 s and shows whole minutes left ("54 min left"), not seconds; "now" = the overlapping block that started last; card text includes am/pm; timeline widens for blocks

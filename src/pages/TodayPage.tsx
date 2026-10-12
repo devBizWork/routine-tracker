@@ -20,6 +20,7 @@ import {
   yAt,
 } from './today/plan'
 import { TaskSheet } from './tasks/TaskSheet'
+import { TodoSheet } from './tasks/TodoSheet'
 
 /** The now line moves in steps of this many seconds. */
 const LINE_STEP_SECONDS = 15
@@ -43,6 +44,7 @@ export function TodayPage() {
   const day = useLiveQuery(useCallback(() => peekDay(date), [date]))
 
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [todoOpen, setTodoOpen] = useState(false)
   const [soon, setSoon] = useState(0)
   const comingSoon = () => setSoon((n) => n + 1)
   const hideSoon = useCallback(() => setSoon(0), [])
@@ -105,7 +107,7 @@ export function TodayPage() {
       {ready && tasks.length === 0 && (
         <FirstRun
           onAddBlock={() => setSheetOpen(true)}
-          onJotTodo={() => navigate('/tasks', { state: { focusQuickAdd: true } })}
+          onJotTodo={() => setTodoOpen(true)}
         />
       )}
 
@@ -140,6 +142,16 @@ export function TodayPage() {
           today={date}
           onDuplicate={() => undefined}
           onClosed={() => setSheetOpen(false)}
+        />
+      )}
+
+      {todoOpen && (
+        <TodoSheet
+          onClosed={(wasAdded) => {
+            setTodoOpen(false)
+            // Show where the to-do went: the Inbox on the Tasks tab.
+            if (wasAdded) navigate('/tasks')
+          }}
         />
       )}
 
