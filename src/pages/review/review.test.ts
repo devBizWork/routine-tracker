@@ -34,11 +34,11 @@ const WORKED_EXAMPLE = [
 ]
 
 describe('what each row of Planned vs actual says', () => {
-  const rows = reviewRows(scoreDay(WORKED_EXAMPLE, TOL).items, TOL, '12h')
+  const rows = reviewRows(scoreDay(WORKED_EXAMPLE).items, TOL, '12h')
 
   it('one row per block, with its score', () => {
     expect(rows.map((r) => r.title)).toEqual(['Morning workout', 'Deep work', 'Lunch walk', 'Evening reading'])
-    expect(rows.map((r) => (r.score === null ? null : Math.round(r.score * 100)))).toEqual([100, 75, 0, null])
+    expect(rows.map((r) => (r.score === null ? null : Math.round(r.score * 100)))).toEqual([100, 25, 0, null])
     expect(rows.map((r) => r.state)).toEqual(['done', 'done', 'skipped', 'unknown'])
   })
 
@@ -78,13 +78,13 @@ describe('what each row of Planned vs actual says', () => {
 
   it('a running timer is "Timer running", not "Not logged"', () => {
     const running = block('Reading', '21:00', 40, { timerStartedAt: 1 })
-    const [row] = reviewRows(scoreDay([running], TOL).items, TOL, '12h')
+    const [row] = reviewRows(scoreDay([running]).items, TOL, '12h')
     expect(row?.running).toBe(true)
     expect(row?.actualText).toBe('Timer running')
   })
 
   it('follows the 24-hour setting', () => {
-    const [row] = reviewRows(scoreDay([WORKED_EXAMPLE[0] as Occurrence], TOL).items, TOL, '24h')
+    const [row] = reviewRows(scoreDay([WORKED_EXAMPLE[0] as Occurrence]).items, TOL, '24h')
     expect(row?.planText).toBe('Plan 06:30 – 07:30')
   })
 })

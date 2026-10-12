@@ -3,6 +3,17 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 7 fix 2 (what the percentage means):** a block planned 2:50 to 3:08 pm with 2:53 to 2:57 pm logged scored 81%,
+  because the old rule gave 50% for doing it and 25% for starting on time before counting the length. Now a block's
+  score is **how much of its planned time you spent on plan, at the time it was planned** (the minutes the actual time
+  overlaps the planned time, divided by the planned minutes): that block is 22%. Done exactly as planned is 100%,
+  late or early only counts the part inside the plan, a skipped block is 0%, and running longer is not punished in
+  the score (the "+15 min" tag shows it). Followed on the Day score is now simply the minutes spent on plan out of the
+  planned minutes. `docs/feature-spec.md` is updated; the worked example is now Logged 50% (based on 160 of 200
+  minutes), Day 40% followed, 40% missed, 20% unknown, real result 40–60%. The review says in words what each
+  percentage means. The old timing and duration credits (and the 60-minute zero-credit setting) are no longer used by
+  the score; the 10-minute and 10% tolerances still decide when a block is tagged as off plan. Branch
+  `step-7-fix-score`. (`design/screens/DayReview.html` still shows the old numbers; the layout is what we follow.)
 - **Step 7 fix (bar colours on the Day review):** the Planned vs actual bars used a different colour on every row
   (the plan bar took the block's category colour, the actual bar was blue or apricot, skipped was an outline,
   not logged was striped). Now every plan bar is the same grey-blue and every actual bar is the same blue, as the
@@ -219,9 +230,8 @@
 ## Decisions made
 
 - **Step 7 rules (in `src/scoring/`).**
-  - **Duration credit D** is 1 within the length tolerance, then falls evenly to 0 at no time (shorter) or at double the
-    plan (longer). It is compared in minutes with a tiny margin so exactly 10% over (66 of 60) is not lost to
-    rounding (a unit test caught this).
+  - **Task score** (changed in Step 7 fix 2, replacing timing credit T and duration credit D): the share of the planned
+    minutes your actual time overlaps. Longer than planned is not punished in the score.
   - **Unknown** is any counted block with no log, including one whose timer is still running; a running timer is not
     counted in the "Log remaining tasks" badge (it is being logged).
   - **The chip and the big Day number show Followed**; the Logged score is the other card. With nothing logged both show

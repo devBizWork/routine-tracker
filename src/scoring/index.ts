@@ -1,15 +1,6 @@
 // The scoring rules, with no screens and no database. Import from here:
 //   import { scoreDay, taskScore } from '../scoring'
-export {
-  durationCredit,
-  loggedLength,
-  scoreTask,
-  taskScore,
-  timingCredit,
-  type ScoringBlock,
-  type ScoringTolerances,
-  type TaskScore,
-} from './taskScore'
+export { loggedLength, overlapMinutes, scoreTask, taskScore, type ScoringBlock, type TaskScore } from './taskScore'
 export {
   scoreDay,
   startedByFor,

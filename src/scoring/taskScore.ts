@@ -1,13 +1,17 @@
 import { timeToMinutes } from '../data/time'
-import type { OccurrenceStatus, TimeOfDay, Tolerances } from '../data/types'
+import type { OccurrenceStatus, TimeOfDay } from '../data/types'
 
 // The score of one block (docs/feature-spec.md, "Per-task score"). Pure functions: numbers in,
 // numbers out, nothing about screens or the database.
 //
-//   Task score = 0.5 + 0.25 T + 0.25 D        (a done block)
-//   Task score = 0                            (a skipped block)
+// A block's score is how much of its planned time you actually spent inside it, at the time it
+// was planned:
 //
-// T is the timing credit and D the duration credit, each from 0 to 1.
+//   Task score = (minutes the actual time overlaps the planned time) / (planned minutes)
+//
+// Done exactly as planned is 100%. Started late, stopped early or done at another time scores only
+// the part that matched the plan. A skipped block scores 0. Running longer than planned is not
+// punished here (the block shows a "+15 min" tag instead), because you still did all the planned time.
 
 /** What the scoring needs to know about a block. An Occurrence fits this. */
 export interface ScoringBlock {
@@ -20,51 +24,11 @@ export interface ScoringBlock {
   timerStartedAt?: number | null
 }
 
-/** The Settings tolerances the scores use. */
-export type ScoringTolerances = Pick<Tolerances, 'onTimeMin' | 'lengthPct' | 'zeroCreditMin'>
-
 export interface TaskScore {
-  /** 0 to 1. */
+  /** 0 to 1: the share of the planned time that was spent on plan. */
   score: number
-  /** T: timing credit, 0 to 1 (0 for a skipped block). */
-  timing: number
-  /** D: duration credit, 0 to 1 (0 for a skipped block). */
-  duration: number
-}
-
-const clamp01 = (value: number) => Math.min(1, Math.max(0, value))
-
-/**
- * T: 1 if the block started within `onTimeMin` minutes of its plan, then falling evenly to 0 at
- * `zeroCreditMin` minutes early or late (and staying 0 beyond that).
- * @param startDiffMinutes actual start minus planned start (negative = early)
- */
-export function timingCredit(startDiffMinutes: number, tolerances: ScoringTolerances): number {
-  const off = Math.abs(startDiffMinutes)
-  if (off <= tolerances.onTimeMin) return 1
-  const span = tolerances.zeroCreditMin - tolerances.onTimeMin
-  if (span <= 0) return 0
-  return clamp01(1 - (off - tolerances.onTimeMin) / span)
-}
-
-/**
- * D: 1 if the time actually spent is within `lengthPct` percent of the plan. Shorter, it falls
- * evenly to 0 at no time at all; longer, evenly to 0 at double the plan (and stays 0 beyond).
- */
-export function durationCredit(
-  actualMinutes: number,
-  plannedMinutes: number,
-  tolerances: Pick<ScoringTolerances, 'lengthPct'>,
-): number {
-  if (plannedMinutes <= 0) return 0
-  const tolerance = tolerances.lengthPct / 100
-  // Compared in minutes, with a hair of room, so exactly 10% over (66 of 60) is not lost to rounding.
-  if (Math.abs(actualMinutes - plannedMinutes) <= plannedMinutes * tolerance + 1e-9) return 1
-  const ratio = actualMinutes / plannedMinutes
-  if (ratio < 1) return clamp01(ratio / (1 - tolerance))
-  // Longer than the plan: from 1 at (1 + tolerance) down to 0 at 2 times the plan.
-  if (tolerance >= 1) return 0
-  return clamp01((2 - ratio) / (1 - tolerance))
+  /** The minutes of the actual time that fall inside the planned time. */
+  matchedMinutes: number
 }
 
 /** The minutes between the actual start and end, or null if either is missing or not in order. */
@@ -74,22 +38,32 @@ export function loggedLength(block: Pick<ScoringBlock, 'actualStart' | 'actualEn
   return minutes > 0 ? minutes : null
 }
 
+/** How many minutes of two time spans (minutes after midnight) are the same minutes. */
+export function overlapMinutes(startA: number, endA: number, startB: number, endB: number): number {
+  return Math.max(0, Math.min(endA, endB) - Math.max(startA, startB))
+}
+
 /**
  * The score of one block, or null if it has no score yet (it was not logged, so it is Unknown).
  * A skipped block scores 0; a done block needs a valid start and end.
  */
-export function scoreTask(block: ScoringBlock, tolerances: ScoringTolerances): TaskScore | null {
-  if (block.status === 'skipped') return { score: 0, timing: 0, duration: 0 }
+export function scoreTask(block: ScoringBlock): TaskScore | null {
+  if (block.status === 'skipped') return { score: 0, matchedMinutes: 0 }
   if (block.status !== 'done') return null
-  const length = loggedLength(block)
-  if (length === null || block.actualStart === null) return null
+  if (loggedLength(block) === null || block.actualStart === null || block.actualEnd === null) return null
+  if (block.plannedMinutes <= 0) return null
 
-  const timing = timingCredit(timeToMinutes(block.actualStart) - timeToMinutes(block.plannedStart), tolerances)
-  const duration = durationCredit(length, block.plannedMinutes, tolerances)
-  return { score: 0.5 + 0.25 * timing + 0.25 * duration, timing, duration }
+  const plannedStart = timeToMinutes(block.plannedStart)
+  const matchedMinutes = overlapMinutes(
+    plannedStart,
+    plannedStart + block.plannedMinutes,
+    timeToMinutes(block.actualStart),
+    timeToMinutes(block.actualEnd),
+  )
+  return { score: Math.min(1, matchedMinutes / block.plannedMinutes), matchedMinutes }
 }
 
 /** Just the number from scoreTask. */
-export function taskScore(block: ScoringBlock, tolerances: ScoringTolerances): number | null {
-  return scoreTask(block, tolerances)?.score ?? null
+export function taskScore(block: ScoringBlock): number | null {
+  return scoreTask(block)?.score ?? null
 }

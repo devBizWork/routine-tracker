@@ -18,7 +18,7 @@ export function LoggedScoreCard({ score }: { score: DayScore<Occurrence> }) {
       ? 'Nothing is planned yet, so there is nothing to score.'
       : logged === null
         ? 'Nothing is logged yet, so there is no score.'
-        : 'How closely you kept to the plan on the blocks you logged.'
+        : 'How much of the planned time you spent on plan, on the blocks you logged.'
 
   return (
     <section aria-labelledby="logged-h" className={`${card} mt-4`}>
