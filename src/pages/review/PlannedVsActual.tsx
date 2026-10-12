@@ -3,8 +3,9 @@ import type { ReviewRow } from './rows'
 
 // The "Planned vs actual" list on the Day review (design/screens/DayReview.html): for each block,
 // its score, the plan and the actual times in words, and two thin bars on a shared time scale.
-
-const STRIPES = 'repeating-linear-gradient(135deg, var(--color-unknown-stripe-a) 0 4px, var(--color-unknown-stripe-b) 4px 8px)'
+// The bars use the same two colours on every row, as the legend says: every plan bar is grey-blue and
+// every actual bar is blue. A block with no actual time (skipped, or not logged) has no actual bar at
+// all; its words and score pill say why.
 
 function ScorePill({ row }: { row: ReviewRow }) {
   if (row.score === null) {
@@ -25,7 +26,6 @@ function ScorePill({ row }: { row: ReviewRow }) {
 }
 
 function Row({ row }: { row: ReviewRow }) {
-  const offPlan = row.drift !== null
   return (
     <li className="flex flex-col gap-1.5 border-t border-line px-4 py-3.5 first:border-t-0">
       <div className="flex items-center gap-2">
@@ -42,27 +42,17 @@ function Row({ row }: { row: ReviewRow }) {
       </span>
       <div aria-hidden="true" className="relative mt-0.5 h-4">
         <span
-          className="absolute top-0 h-1.5 rounded-3"
-          style={{
-            left: `${row.planBar.left}%`,
-            width: `${row.planBar.width}%`,
-            background: categoryColor(row.color),
-          }}
+          data-bar="plan"
+          className="absolute top-0 h-1.5 rounded-3 bg-unknown-line"
+          style={{ left: `${row.planBar.left}%`, width: `${row.planBar.width}%` }}
         />
         {row.actualBar ? (
           <span
-            data-actual={offPlan ? 'off-plan' : 'on-plan'}
-            className={`absolute top-[9px] h-1.5 rounded-3 ${offPlan ? 'bg-missed' : 'bg-primary'}`}
+            data-bar="actual"
+            className="absolute top-[9px] h-1.5 rounded-3 bg-primary"
             style={{ left: `${row.actualBar.left}%`, width: `${row.actualBar.width}%` }}
           />
-        ) : row.state === 'skipped' ? (
-          <span className="absolute top-[9px] left-0 box-border h-1.5 w-full rounded-3 border-[1.5px] border-missed" />
-        ) : (
-          <span
-            className="absolute top-[9px] left-0 h-1.5 w-full rounded-3"
-            style={{ background: STRIPES }}
-          />
-        )}
+        ) : null}
       </div>
       {row.drift && (
         <span className="self-start rounded-8 bg-missed-soft px-2 py-0.5 text-11-5 font-bold text-missed-text">
@@ -82,7 +72,7 @@ export function PlannedVsActual({ rows }: { rows: readonly ReviewRow[] }) {
         </h2>
         <span aria-hidden="true" className="flex gap-2.5 text-11 font-semibold text-muted">
           <span className="flex items-center gap-1">
-            <span className="h-[5px] w-3 rounded-3 bg-line-strong" />
+            <span className="h-[5px] w-3 rounded-3 bg-unknown-line" />
             Plan
           </span>
           <span className="flex items-center gap-1">
