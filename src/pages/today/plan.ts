@@ -1,4 +1,4 @@
-import { isUnlogged, timeToMinutes, type Occurrence } from '../../data'
+import { formatDuration, isUnlogged, timeToMinutes, type Occurrence } from '../../data'
 
 // The rules behind the Today screen, kept apart from the screen so they can be tested:
 // where a block sits on the timeline, which blocks share the width, and what the pinned
@@ -183,13 +183,12 @@ export function nowNext(spans: readonly Span[], nowSeconds: number): NowNext {
   return { kind: 'free', until: next.start, next }
 }
 
-/** 1072 seconds -> "17:52"; 3725 seconds -> "1:02:05". */
-export function formatCountdown(totalSeconds: number): string {
-  const s = Math.max(0, Math.floor(totalSeconds))
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = String(s % 60).padStart(2, '0')
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
+/**
+ * The time left, in whole minutes with no seconds, rounded up so it never says "0 min" while
+ * the block is still going: 1072 seconds -> "18 min"; 3725 seconds -> "63 min"; 7500 -> "2 h 5 min".
+ */
+export function formatTimeLeft(totalSeconds: number): string {
+  return formatDuration(Math.max(1, Math.ceil(totalSeconds / 60)))
 }
 
 // ---- The clock ----

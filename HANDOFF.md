@@ -162,15 +162,15 @@ The user supplies each step's prompt. Known from the conversation:
 - **Duplicate on routines/one-offs opens a New block sheet; on an Inbox to-do it adds another to-do**
   (user's choice; the first version opened a sheet and was rejected).
 - **44 px tap targets** override the design where it is smaller (day buttons, chips, short blocks).
-- **End time rounds to the nearest 5 minutes**; blocks cannot run past 11:59 pm (midnight not supported).
+- **End time is kept to the exact minute** (was rounded to 5; changed in step-5-fix); blocks cannot run past 11:59 pm (midnight not supported).
 - **Native pickers** are invisible `<input type=time/date>` / `<select>` over drawn boxes (text follows 12/24 h).
 - **Rejected:** a separate preview site (CLAUDE.md: the live site is the test site); committing straight
   to `main` (replaced by PRs); tagging the branch before merging (tag goes on merged `main`);
   storing data in Files as the live store (iOS cannot write there; backup via share sheet is planned);
   using the old `localStorage` for the Developer switch (stored in the Dexie `meta` table).
 - **Step 5 rules:** 80 px an hour; block 1 px below its time, 3 px short; two-line layout from 50 px;
-  min 30 px; overlap = side-by-side columns (visual min height counts); now line every 15 s, card every
-  1 s; "now" = the overlapping block that started last; card text includes am/pm; timeline widens for blocks
+  min 30 px; overlap = side-by-side columns (visual min height counts); now line every 15 s (red, token `--color-now-line`), card every
+  1 s and shows whole minutes left ("54 min left"), not seconds; "now" = the overlapping block that started last; card text includes am/pm; timeline widens for blocks
   outside the day hours; re-scroll to now on open, date change, or return after 60 s or more.
 
 ## 7. Commands
@@ -218,7 +218,7 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 | 2 | yes | Storage "Persistent" reported; Developer panel worked |
 | 3 and fixes | yes | keyboard bug and Duration label wrap were found here and fixed |
 | 4 | partly | red line under the arrow (fixed); swipe feel and Delete menu not reported |
-| 5 | pending | walkthrough is in PR #6 |
+| 5 | yes | play button too big on a 15-min block, End could not be 8:00 pm, now line too faint, countdown too busy: all fixed in `step-5-fix` (recheck on the phone) |
 
 ## 8. Known bugs, unverified items, flaky tests, gotchas
 

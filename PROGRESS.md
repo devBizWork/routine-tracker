@@ -3,6 +3,18 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 5 fix (after the first iPhone test):** four things found on the phone. Branch `step-5-fix`.
+  - **Play button too big:** on a short running block (a 15-minute block is about 30 px tall) the round
+    play button and the second text line stuck out of the block. A running block now has two lines only
+    when it is 50 px or taller (about 40 minutes), and its round button shrinks to fit the block
+    (22 px in a 15-minute block, 36 px as before in a tall one). The tap area stays 44 px.
+  - **End time could not be set to 8:00 pm:** End was rounded to the nearest 5 minutes, so with a start of
+    7:06 pm, typing 8:00 pm (54 min) snapped back to 8:01 pm (55 min). End is now kept to the exact minute;
+    the Duration list adds any length that is not on its 5-minute grid (such as 54 min).
+  - **Now line:** now red (new token `--color-now-line`, #D7263D, white time label 4.96:1), 3 px thick with
+    a white edge, a larger dot with a soft halo, and a slightly bigger time label.
+  - **Countdown:** the Now card no longer counts seconds. It says "54 min left" (whole minutes, rounded up,
+    "2 h 5 min" from two hours on, never "0 min" while the block runs).
 - **Step 5:** the Today screen as a live timeline. Tag: `step-5` (added after the merge).
   - Header: the full date, "Today", the Day score chip showing "–" and the sound button (both say
     "Coming soon" when tapped until Steps 7 and 11).
@@ -11,7 +23,7 @@
     showing the title and "6:30 – 7:30 · 60 min". Blocks that overlap in time sit side by side.
   - The now line (with a time label) moves every 15 seconds. The block it crosses gets the in-progress
     look (outline, shadow, NOW badge). The timeline opens scrolled so the line is a third of the way down.
-  - The pinned Now / Next card: block, minutes:seconds left, progress bar, next block. Also "First up: …
+  - The pinned Now / Next card: block, time left in whole minutes (changed in the Step 5 fix), progress bar, next block. Also "First up: …
     at …", "Free until … · Next: …" and "Day done" (with a Review day button, Coming soon).
   - Empty states: no tasks at all shows the first-run screen ("Add a time block" opens the New block
     sheet; "Or jot a to-do in the inbox" opens Tasks with the quick-add field ready); tasks but none
@@ -72,6 +84,11 @@
   - README "Deploy" section with the exact steps.
 
 ## Known bugs / not yet verified
+
+- **Step 5 fix not yet checked on the iPhone.** Measured in a desktop browser at 390 px with a pretend
+  clock: a 15-minute running block (30 px) holds its 22 px play button with 4 px to spare and a 44 px tap
+  area; the Now card shows "10 min left". Still to confirm on the phone: the End field now accepts 8:00 pm
+  from a 7:06 pm start, and how the red line looks outdoors.
 
 - **Step 5 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a
   pretend clock to reach every state of the Now / Next card, the midnight rollover and returning to the
@@ -219,8 +236,9 @@
   - **Native pickers:** Start, End, Date and Duration are real `<input type="time">`,
     `<input type="date">` and `<select>` elements, invisible and laid over the drawn boxes, so the
     text shown follows the 12/24-hour setting while the phone's own picker does the picking.
-  - **End time is rounded to the nearest 5 minutes** (so the Duration picker can always show it);
-    a block cannot run past 11:59 pm (midnight is not supported yet).
+  - **End time is kept to the exact minute** (changed in the Step 5 fix; it used to round to 5 minutes,
+    which made 8:00 pm unreachable from a 7:06 pm start). The Duration picker adds off-grid lengths.
+    A block cannot run past 11:59 pm (midnight is not supported yet).
   - **A new block starts as Once, today, 30 min, category Focus.** Custom starts from the days
     that were showing; tapping a day on Daily or Weekdays switches to Custom with that day flipped.
   - **Inbox quick-add tasks** are Once, 30 minutes, category Focus, with no start time.

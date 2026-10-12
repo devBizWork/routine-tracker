@@ -1,5 +1,5 @@
 import { formatMinutesAsTime, formatRange, type TimeFormat } from '../../data'
-import { formatCountdown, type NowNext } from './plan'
+import { formatTimeLeft, type NowNext } from './plan'
 
 /**
  * The pinned card under the header (design/screens/Main.html): the block you are in with the
@@ -34,8 +34,8 @@ export function NowNextCard({
               <span className="text-19 font-bold tracking-[-0.01em] break-words">{state.block.title}</span>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <span className="font-display text-30 leading-none font-bold">
-                {formatCountdown(state.secondsLeft)}
+              <span className="font-display text-24 leading-none font-bold whitespace-nowrap">
+                {formatTimeLeft(state.secondsLeft)}
               </span>
               <span className="text-12 font-semibold text-muted">left</span>
             </div>

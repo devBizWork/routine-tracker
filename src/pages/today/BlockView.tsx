@@ -3,6 +3,8 @@ import { TWO_LINES_FROM, type BlockLook, type PlacedBlock } from './plan'
 
 /** The smallest comfortable tap target, in pixels. */
 const MIN_TAP = 44
+/** A running block at least this tall (about 55 minutes) keeps the roomy look; shorter is compact. */
+const CURRENT_ROOMY_FROM = 64
 
 // One block on the timeline, drawn from design/screens/Main.html and States.html. The whole
 // block is a button, and so is the round button at its right; both say "Coming soon" until
@@ -17,7 +19,21 @@ const icon = {
   'aria-hidden': true,
 } as const
 
-function QuickButton({ look, title, onTap }: { look: BlockLook; title: string; onTap: () => void }) {
+/**
+ * The round button at the right of a block. `room` is the tallest the drawn circle may be, so
+ * it never sticks out of a short block; the tap area around it stays 44 px either way.
+ */
+function QuickButton({
+  look,
+  title,
+  onTap,
+  room,
+}: {
+  look: BlockLook
+  title: string
+  onTap: () => void
+  room: number
+}) {
   const label =
     look === 'unknown'
       ? `${title} was not logged. Log it now`
@@ -27,19 +43,24 @@ function QuickButton({ look, title, onTap }: { look: BlockLook; title: string; o
           ? `${title} skipped. Edit log`
           : `Start timer for ${title}`
 
+  const nominal = look === 'current' ? 36 : look === 'done' ? 30 : 28
+  const size = Math.max(18, Math.min(nominal, Math.floor(room)))
+  const box = { width: size, height: size }
+  const glyph = (full: number) => Math.round((full * size) / nominal)
+
   let face
   if (look === 'done') {
     face = (
-      <span className="flex size-[30px] items-center justify-center rounded-15 bg-primary text-on-primary">
-        <svg {...icon} width="15" height="15" strokeWidth="2.8">
+      <span style={box} className="flex items-center justify-center rounded-full bg-primary text-on-primary">
+        <svg {...icon} width={glyph(15)} height={glyph(15)} strokeWidth="2.8">
           <path d="M5 12.5l4.5 4.5L19 7.5" />
         </svg>
       </span>
     )
   } else if (look === 'skipped') {
     face = (
-      <span className="flex size-7 items-center justify-center rounded-14 bg-card text-muted">
-        <svg {...icon} width="15" height="15" strokeWidth="2.4">
+      <span style={box} className="flex items-center justify-center rounded-full bg-card text-muted">
+        <svg {...icon} width={glyph(15)} height={glyph(15)} strokeWidth="2.4">
           <circle cx="12" cy="12" r="8" />
           <path d="M6.5 6.5l11 11" />
         </svg>
@@ -47,8 +68,11 @@ function QuickButton({ look, title, onTap }: { look: BlockLook; title: string; o
     )
   } else if (look === 'unknown') {
     face = (
-      <span className="box-border flex size-7 items-center justify-center rounded-14 border-[1.5px] border-dashed border-muted bg-card text-muted">
-        <svg {...icon} width="15" height="15" strokeWidth="2.4">
+      <span
+        style={box}
+        className="box-border flex items-center justify-center rounded-full border-[1.5px] border-dashed border-muted bg-card text-muted"
+      >
+        <svg {...icon} width={glyph(15)} height={glyph(15)} strokeWidth="2.4">
           <path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.7.3-1.1.9-1.1 1.6v.6" />
           <path d="M12 17.2h.01" />
         </svg>
@@ -56,16 +80,16 @@ function QuickButton({ look, title, onTap }: { look: BlockLook; title: string; o
     )
   } else if (look === 'current') {
     face = (
-      <span className="flex size-9 items-center justify-center rounded-18 bg-primary text-on-primary">
-        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+      <span style={box} className="flex items-center justify-center rounded-full bg-primary text-on-primary">
+        <svg width={glyph(16)} height={glyph(16)} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       </span>
     )
   } else {
     face = (
-      <span className="flex size-7 items-center justify-center rounded-14 bg-card text-primary">
-        <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true">
+      <span style={box} className="flex items-center justify-center rounded-full bg-card text-primary">
+        <svg width={glyph(13)} height={glyph(13)} viewBox="0 0 24 24" aria-hidden="true">
           <path d="M7 4.5v15l13-7.5z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
         </svg>
       </span>
@@ -112,6 +136,11 @@ export function BlockView({
   // The tap area sits inside the block's outline, so it grows by the outline too.
   const outline = look === 'unknown' ? 1.5 : look === 'current' ? 2 : 0
   const tapPad = Math.max(0, (MIN_TAP - block.height) / 2) + outline
+  // A running block is taller inside (two lines, padding) only when it has the height for it;
+  // a short one (a 15-minute block is about 30 px) is a single line and a smaller button.
+  const roomy = look !== 'current' || block.height >= CURRENT_ROOMY_FROM
+  // How tall the round button may be: the block less its outline and a little air.
+  const buttonRoom = block.height - 2 * outline - 4
   const range = formatRange(block.start, block.end, timeFormat)
   const duration = formatDuration(o.plannedMinutes)
 
@@ -155,7 +184,7 @@ export function BlockView({
   return (
     <div
       className={`relative box-border flex h-full w-full gap-2 ${
-        look === 'current' ? 'items-start py-2.5 pr-1 pl-3' : 'items-center pr-0.5 pl-3'
+        look === 'current' && roomy ? 'items-start py-2.5 pr-1 pl-3' : 'items-center pr-0.5 pl-3'
       } ${shell}`}
       style={style}
     >
@@ -184,7 +213,7 @@ export function BlockView({
             </span>
           )}
         </span>
-        {(twoLines || look === 'current') && (
+        {twoLines && (
           <span className="truncate text-12 font-medium">
             {range} · {duration}
           </span>
@@ -208,7 +237,7 @@ export function BlockView({
         </>
       )}
 
-      <QuickButton look={look} title={o.title} onTap={onTap} />
+      <QuickButton look={look} title={o.title} onTap={onTap} room={buttonRoom} />
     </div>
   )
 }

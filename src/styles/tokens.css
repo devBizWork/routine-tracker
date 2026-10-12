@@ -30,6 +30,7 @@
   --color-unknown-edge: #8aa6ae; /* dashed edge */
   --color-unknown-line: #cbe2e8; /* border of the Unknown swatch */
 
+  --color-now-line: #d7263d; /* the red now line on the timeline (white text on it: 4.96:1) */
   --color-now-fill: #d9f4f8; /* Now card */
   --color-now-border: #b5e4ec;
   --color-now-track: #ffffff; /* progress track on the Now card */
@@ -88,6 +89,8 @@
   --shadow-fab: 0 10px 24px rgb(11 110 153 / 0.32); /* the round + button */
   --shadow-segment: 0 1px 3px rgb(14 26 32 / 0.14); /* selected segment of a switch */
   --shadow-inprogress: 0 8px 20px rgb(11 110 153 / 0.18); /* the block the now line is inside */
+  --shadow-now-line: 0 0 0 1px rgb(255 255 255 / 0.7), 0 1px 6px rgb(215 38 61 / 0.35); /* the red line: white edge keeps it clear on any block color */
+  --shadow-now-dot: 0 0 0 4px rgb(215 38 61 / 0.18); /* soft halo around the dot */
 
   /* ---- Font sizes used in the screens ---- */
   --text-*: initial;
