@@ -4,7 +4,7 @@ import {
   MIN_BLOCK_HEIGHT,
   PX_PER_HOUR,
   blockLook,
-  formatCountdown,
+  formatTimeLeft,
   hourLines,
   minutesOfDay,
   nowNext,
@@ -196,14 +196,14 @@ describe('Now / Next card', () => {
     if (state.kind !== 'current') return
     expect(state.block.title).toBe('Deep work')
     expect(state.secondsLeft).toBe(at(10, 30) - at(9, 18, 8))
-    expect(formatCountdown(state.secondsLeft)).toBe('1:11:52')
+    expect(formatTimeLeft(state.secondsLeft)).toBe('72 min')
     expect(state.progress).toBeCloseTo((18 * 60 + 8) / (90 * 60), 5)
     expect(state.next?.title).toBe('Client check-in call')
   })
 
-  it('shows minutes and seconds left, like the design (17:52)', () => {
+  it('shows whole minutes left, no seconds (17 min 52 s left reads "18 min")', () => {
     const state = nowNext(day, at(10, 12, 8))
-    expect(state.kind === 'current' && formatCountdown(state.secondsLeft)).toBe('17:52')
+    expect(state.kind === 'current' && formatTimeLeft(state.secondsLeft)).toBe('18 min')
   })
 
   it('between blocks: "Free until" with the next one', () => {
@@ -239,14 +239,21 @@ describe('Now / Next card', () => {
   })
 })
 
-describe('countdown text', () => {
-  it('writes minutes and seconds, and hours when there are any', () => {
-    expect(formatCountdown(1072)).toBe('17:52')
-    expect(formatCountdown(59)).toBe('0:59')
-    expect(formatCountdown(307)).toBe('5:07')
-    expect(formatCountdown(3725)).toBe('1:02:05')
-    expect(formatCountdown(0)).toBe('0:00')
-    expect(formatCountdown(-5)).toBe('0:00')
+describe('time left text', () => {
+  it('writes whole minutes, rounded up, and hours from two hours on', () => {
+    expect(formatTimeLeft(1072)).toBe('18 min')
+    expect(formatTimeLeft(54 * 60)).toBe('54 min')
+    expect(formatTimeLeft(54 * 60 - 30)).toBe('54 min')
+    expect(formatTimeLeft(307)).toBe('6 min')
+    expect(formatTimeLeft(3725)).toBe('63 min')
+    expect(formatTimeLeft(7500)).toBe('2 h 5 min')
+  })
+
+  it('never says 0 min while the block is still going', () => {
+    expect(formatTimeLeft(59)).toBe('1 min')
+    expect(formatTimeLeft(1)).toBe('1 min')
+    expect(formatTimeLeft(0)).toBe('1 min')
+    expect(formatTimeLeft(-5)).toBe('1 min')
   })
 })
 

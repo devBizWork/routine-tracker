@@ -92,15 +92,16 @@ export function setDuration(d: Draft, duration: number): Draft {
 }
 
 /**
- * Typing an End time sets the duration to match (rounded to the nearest 5 minutes, so the
- * Duration picker can always show it). An End that gives no valid block is kept as typed,
- * and reported by timeProblem, until it is fixed.
+ * Typing an End time sets the duration to match, to the exact minute (a block from 7:06 to
+ * 8:00 is 54 minutes; the Duration picker adds any length that is off its 5-minute grid).
+ * An End that gives no valid block is kept as typed, and reported by timeProblem, until it
+ * is fixed.
  */
 export function setEnd(d: Draft, end: TimeOfDay | ''): Draft {
   if (end === '' || d.start === '') return d
   const length = timeToMinutes(end) - timeToMinutes(d.start)
   if (length < 1 || length > MAX_DURATION) return { ...d, endRaw: end }
-  return { ...d, duration: snap(length), endRaw: null }
+  return { ...d, duration: length, endRaw: null }
 }
 
 export function setEndMode(d: Draft, endMode: boolean): Draft {

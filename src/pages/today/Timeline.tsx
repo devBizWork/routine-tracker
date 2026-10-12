@@ -80,14 +80,14 @@ export function Timeline({
         <div
           aria-hidden="true"
           data-now-line
-          className="pointer-events-none absolute inset-x-0 z-20 flex h-[18px] items-center"
-          style={{ top: yAt(nowMinutes, range) - 9 }}
+          className="pointer-events-none absolute inset-x-0 z-20 flex h-[20px] items-center"
+          style={{ top: yAt(nowMinutes, range) - 10 }}
         >
-          <span className="flex h-[18px] w-[46px] items-center justify-center rounded-9 bg-primary text-10-5 font-extrabold text-on-primary">
+          <span className="flex h-[20px] w-[46px] items-center justify-center rounded-10 bg-now-line text-10-5 font-extrabold text-on-primary">
             {formatClock(nowMinutes, timeFormat)}
           </span>
-          <span className="ml-0.5 box-border size-3 rounded-6 border-2 border-ground bg-primary" />
-          <span className="h-0.5 flex-1 bg-primary" />
+          <span className="ml-0.5 box-border size-3.5 rounded-7 border-2 border-ground bg-now-line shadow-now-dot" />
+          <span className="h-[3px] flex-1 rounded-2 bg-now-line shadow-now-line" />
         </div>
       )}
     </div>

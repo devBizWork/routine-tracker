@@ -84,11 +84,24 @@ describe('start, duration and end stay in sync', () => {
     expect(endValue(d)).toBe('07:45')
   })
 
-  it('rounds an end to the nearest 5 minutes so the Duration picker can show it', () => {
+  it('keeps an end to the exact minute (no rounding to 5 minutes)', () => {
     const d = setEnd(ready(), '07:47')
-    expect(d.duration).toBe(75)
-    expect(endValue(d)).toBe('07:45')
-    expect(setEnd(ready(), '06:31').duration).toBe(5)
+    expect(d.duration).toBe(77)
+    expect(endValue(d)).toBe('07:47')
+    expect(setEnd(ready(), '06:31').duration).toBe(1)
+  })
+
+  it('an end of 8:00 pm is reachable from a start of 7:06 pm (54 min), even after 8:01 pm (55 min)', () => {
+    const start = setStart(ready(), '19:06')
+    const d = setEnd(setEnd(start, '20:01'), '20:00')
+    expect(d.duration).toBe(54)
+    expect(endValue(d)).toBe('20:00')
+    expect(timeProblem(d)).toBeNull()
+  })
+
+  it('the Duration picker offers a duration that is off the 5-minute grid', () => {
+    expect(durationChoices(54)).toContain(54)
+    expect(durationChoices(54)).toContain(50)
   })
 
   it('moving the start keeps the duration and moves the end', () => {
