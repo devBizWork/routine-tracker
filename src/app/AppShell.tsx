@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import { StillDoingPrompt } from './StillDoingPrompt'
 import { TabBar } from './TabBar'
 
 // Full-height column: the current screen scrolls on its own, the tab bar stays put.
@@ -13,6 +14,7 @@ export function AppShell() {
         <Outlet />
       </main>
       <TabBar />
+      <StillDoingPrompt />
     </div>
   )
 }

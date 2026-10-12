@@ -28,7 +28,7 @@ blocks, log what happened, review two adherence scores (Logged score and Day sco
 stays on the phone (no server, no accounts, no analytics, no runtime network calls). It is
 installed from Safari to the Home Screen and must work **offline**.
 
-Plan: **16 steps**, one prompt per step from the user ("Step N of 16: ..."). Steps 1 to 5 are done.
+Plan: **16 steps**, one prompt per step from the user ("Step N of 16: ..."). Steps 1 to 5 are done (plus fixes); Step 6 is built and waiting for the user's merge.
 Build ONLY the step you are given. Anything shown in a design but not yet built shows a small
 "Coming soon" note (no dead taps).
 
@@ -125,12 +125,12 @@ on GitHub; they can be deleted.
 
 ## 5. Remaining work, in order
 
-**Very next step:** the user tests Step 5 on their iPhone and reports (see the test log in 7c). Fix anything
-they report in its own small branch/PR first (like `step-3-fix`), then they send the **Step 6** prompt.
-Do not start any step the user has not sent.
+**Very next step:** the user merges and tests Step 6 on their iPhone and reports (see the test log in 7c). Fix
+anything they report in its own small branch/PR first (like `step-5-fix`), then they send the next step's
+prompt. Do not start any step the user has not sent.
 
 The user supplies each step's prompt. Known from the conversation:
-- **Step 6: logging** (Start/Stop timer, "Done as planned", Skipped, manual times, notes; the Log time
+- **Step 6: logging: DONE (waiting for the merge).** It was: (Start/Stop timer, "Done as planned", Skipped, manual times, notes; the Log time
   sheet in `LogTime.html`; actual bars, done/off-plan/skipped looks, "+15 min" tag and the running-timer chip
   from `States.html`/`Main.html`). Today's blocks and quick buttons currently say "Coming soon".
 - **Step 7: scores** (Day score chip on Today, Day review, "Review day" button now Coming soon).
@@ -186,7 +186,7 @@ npm run preview        # built app at http://localhost:4173/routine-tracker/ (se
 npm run icons          # redraws the placeholder icons in public/
 ```
 
-**Latest results (branch step-5, handoff time):** type check clean, lint clean, **268 tests in 15 files
+**Latest results (branch step-6):** type check clean, lint clean, **342 tests in 19 files
 pass**, production build passes (about 1 s). CI (`checks`) is green on PR #6.
 
 Layout: `src/data/` (Dexie, API, rules, formatting), `src/app/` (shell, `BottomSheet`, `ActionSheet`,
@@ -207,6 +207,10 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 - **UI parts:** `BottomSheet` (full or `fit="content"`, swipe/backdrop/Escape, keyboard-safe),
   `ActionSheet` (iPhone-style menu), `ComingSoonToast`, `PageHeader`, `SwipeRow`, `TaskSheet` (new /
   edit / duplicate / schedule modes), `TimeBox/DateBox/SelectBox` (native pickers).
+- **Logging (Step 6):** `src/data/log.ts` (pure rules: stop/done/skipped/clear patches, elapsed time, off-plan tags,
+  progress line, "Still doing" check; tested), data API `startTimer, stopTimer, runningTimers, peekOccurrence`,
+  `src/pages/log/LogSheet.tsx` + `logForm.ts` (the Log time sheet), `useStartTimer.tsx` (the one-timer question),
+  `src/app/StillDoingPrompt.tsx` (mounted in AppShell), `src/pages/today/actuals.ts` (the actual bars).
 - **Today pieces:** `src/pages/today/plan.ts` (all timeline and Now/Next rules, unit tested),
   `Timeline`, `BlockView` (looks: current, upcoming, unknown, done, skipped), `NowNextCard`, `EmptyStates`.
 - **Tokens:** every color, radius (`rounded-14`), font size (`text-13-5` = 13.5px) and shadow is in
@@ -220,6 +224,7 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 | 2 | yes | Storage "Persistent" reported; Developer panel worked |
 | 3 and fixes | yes | keyboard bug and Duration label wrap were found here and fixed |
 | 4 | partly | red line under the arrow (fixed); swipe feel and Delete menu not reported |
+| 6 | pending | walkthrough is in the Step 6 PR |
 | 5 | yes | play button too big on a 15-min block, End could not be 8:00 pm, now line too faint, countdown too busy: all fixed in `step-5-fix` (recheck on the phone) |
 
 ## 8. Known bugs, unverified items, flaky tests, gotchas

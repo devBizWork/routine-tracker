@@ -3,6 +3,7 @@ import { defaultSettings } from './defaults'
 import { RoutineDb, SETTINGS_KEY } from './db'
 import { addDays, isDateKey, toDateKey } from './dates'
 import { newId } from './ids'
+import { stopPatch } from './log'
 import { occursOn } from './repeat'
 import { buildSampleData } from './sample'
 import type {
@@ -386,6 +387,62 @@ export function createDataApi(options: DataApiOptions = {}) {
     })
   }
 
+  /** One block, read only (no day is created), or undefined if it is gone. */
+  async function peekOccurrence(id: string): Promise<Occurrence | undefined> {
+    return db.occurrences.get(id)
+  }
+
+  /** Every block whose timer is running (there is normally one, since only one can run). */
+  async function runningTimers(): Promise<Occurrence[]> {
+    return sortOccurrences(await db.occurrences.filter((o) => o.timerStartedAt !== null).toArray())
+  }
+
+  /**
+   * Starts a block's timer by saving the moment it began, so it keeps running when the app is
+   * closed. Only one timer runs at a time: if another is running this refuses, unless
+   * stopOthers is set, which stops it first (its time so far is saved as its log).
+   */
+  async function startTimer(id: string, options: { stopOthers?: boolean } = {}): Promise<Occurrence> {
+    return db.transaction('rw', db.occurrences, async () => {
+      const block = await db.occurrences.get(id)
+      if (!block) throw new DataError('That block no longer exists.')
+      if (block.timerStartedAt !== null) return block // already running
+      if (block.status !== 'planned' || block.actualStart !== null || block.actualEnd !== null) {
+        throw new DataError('This block already has a log. Clear the log to time it again.')
+      }
+      const others = (await db.occurrences.filter((o) => o.timerStartedAt !== null).toArray()).filter(
+        (o) => o.id !== id,
+      )
+      if (others.length > 0 && !options.stopOthers) {
+        throw new DataError('Another timer is running. Stop it first.')
+      }
+      const at = now().getTime()
+      for (const other of others) {
+        await db.occurrences.put({ ...other, ...stopPatch(other, at) })
+      }
+      const next: Occurrence = { ...block, timerStartedAt: at }
+      assertValidOccurrence(next)
+      await db.occurrences.put(next)
+      return next
+    })
+  }
+
+  /**
+   * Stops a running timer: Started is when it began, Ended is now (or the block's planned end
+   * with atPlannedEnd), and the block counts as done.
+   */
+  async function stopTimer(id: string, options: { atPlannedEnd?: boolean } = {}): Promise<Occurrence> {
+    return db.transaction('rw', db.occurrences, async () => {
+      const block = await db.occurrences.get(id)
+      if (!block) throw new DataError('That block no longer exists.')
+      if (block.timerStartedAt === null) throw new DataError('No timer is running on this block.')
+      const next: Occurrence = { ...block, ...stopPatch(block, now().getTime(), options.atPlannedEnd) }
+      assertValidOccurrence(next)
+      await db.occurrences.put(next)
+      return next
+    })
+  }
+
   // ---- Settings ----
 
   function withDefaults(row: Partial<Settings>): Settings {
@@ -521,6 +578,10 @@ export function createDataApi(options: DataApiOptions = {}) {
     getDay,
     peekDay,
     updateOccurrence,
+    peekOccurrence,
+    runningTimers,
+    startTimer,
+    stopTimer,
     getSettings,
     readSettings,
     updateSettings,

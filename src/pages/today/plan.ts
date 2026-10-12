@@ -41,7 +41,11 @@ export interface TimeRange {
  * From the day's start to its end (Settings), widened to whole hours so that a block outside
  * those hours (a 4:30 am workout) is still on the timeline instead of out of reach.
  */
-export function visibleRange(spans: readonly Span[], dayStart: string, dayEnd: string): TimeRange {
+export function visibleRange(
+  spans: readonly Pick<Span, 'start' | 'end'>[],
+  dayStart: string,
+  dayEnd: string,
+): TimeRange {
   let start = Math.floor(timeToMinutes(dayStart) / 60) * 60
   let end = Math.ceil(timeToMinutes(dayEnd) / 60) * 60
   for (const s of spans) {
@@ -126,13 +130,15 @@ export function placeBlocks(occurrences: readonly Occurrence[], range: TimeRange
 
 // ---- How a block looks ----
 
-export type BlockLook = 'current' | 'upcoming' | 'unknown' | 'done' | 'skipped'
+export type BlockLook = 'running' | 'current' | 'upcoming' | 'unknown' | 'done' | 'skipped'
 
 /**
- * current: the now line is inside it. unknown: it is over and nothing was logged (never "missed").
- * done and skipped: already logged. upcoming: everything else (still to come).
+ * running: its timer is running (at any hour). current: the now line is inside it and no timer
+ * runs. unknown: it is over and nothing was logged (never "missed"). done and skipped: already
+ * logged. upcoming: everything else (still to come).
  */
 export function blockLook(o: Occurrence, nowMinutes: number): BlockLook {
+  if (o.timerStartedAt !== null) return 'running'
   if (o.status === 'skipped') return 'skipped'
   if (o.status === 'done') return 'done'
   const { start, end } = spanOf(o)

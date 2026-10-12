@@ -2,13 +2,28 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useNavigate } from 'react-router'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
-import { getDay, hasEnded, listTasks, peekDay, readSettings, toDateKey } from '../data'
+import {
+  getDay,
+  getTask,
+  hasEnded,
+  isUnlogged,
+  listTasks,
+  peekDay,
+  readSettings,
+  toDateKey,
+  type Occurrence,
+  type Task,
+} from '../data'
 import { useLiveQuery } from '../data/useLiveQuery'
+import { LogSheet } from './log/LogSheet'
+import { useStartTimer } from './log/useStartTimer'
+import { actualSpan } from './today/actuals'
 import { FirstRun, NothingToday } from './today/EmptyStates'
 import { NowNextCard } from './today/NowNextCard'
 import { Timeline } from './today/Timeline'
 import { TodayHeader } from './today/TodayHeader'
 import {
+  blockLook,
   minutesOfDay,
   nowNext,
   roundDown,
@@ -19,7 +34,7 @@ import {
   visibleRange,
   yAt,
 } from './today/plan'
-import { TaskSheet } from './tasks/TaskSheet'
+import { TaskSheet, type SheetMode } from './tasks/TaskSheet'
 import { TodoSheet } from './tasks/TodoSheet'
 
 /** The now line moves in steps of this many seconds. */
@@ -43,7 +58,13 @@ export function TodayPage() {
   }, [date])
   const day = useLiveQuery(useCallback(() => peekDay(date), [date]))
 
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheet, setSheet] = useState<SheetMode | null>(null)
+  const [logId, setLogId] = useState<string | null>(null)
+  // A short message at the bottom (a problem starting a timer, or opening a block). tap 0 = hidden.
+  const [notice, setNotice] = useState({ tap: 0, message: '' })
+  const hideNotice = useCallback(() => setNotice((n) => ({ ...n, tap: 0 })), [])
+  const showNotice = (message: string) => setNotice((n) => ({ tap: n.tap + 1, message }))
+  const starter = useStartTimer(showNotice)
   const [todoOpen, setTodoOpen] = useState(false)
   const [soon, setSoon] = useState(0)
   const comingSoon = () => setSoon((n) => n + 1)
@@ -57,7 +78,10 @@ export function TodayPage() {
   const blocks = day?.occurrences ?? []
 
   const spans = blocks.map(spanOf)
-  const range = visibleRange(spans, settings?.dayStart ?? '05:00', settings?.dayEnd ?? '23:00')
+  const nowMs = now.getTime()
+  // The timeline also reaches the times actually logged, in case a log runs outside the plan.
+  const logged = blocks.flatMap((o) => actualSpan(o, nowMs) ?? [])
+  const range = visibleRange([...spans, ...logged], settings?.dayStart ?? '05:00', settings?.dayEnd ?? '23:00')
   const lineNow = roundDown(now, LINE_STEP_SECONDS)
   const lineMinutes = minutesOfDay(lineNow)
 
@@ -97,6 +121,30 @@ export function TodayPage() {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
+  // Tapping a block: a past, current or already logged block opens Log time; a block still to
+  // come opens the edit sheet, with "This day only" selected.
+  const openBlock = async (o: Occurrence) => {
+    const comingUp = isUnlogged(o) && minutesOfDay(now) < spanOf(o).start
+    if (!comingUp) {
+      setLogId(o.id)
+      return
+    }
+    const task: Task | undefined = await getTask(o.taskId)
+    if (task) setSheet({ kind: 'edit', task })
+    else showNotice('That block is no longer in your routines.')
+  }
+
+  // The round button: start the timer on a block that is current or coming; stop it, or edit
+  // the log, by opening Log time on the others.
+  const quickTap = (o: Occurrence) => {
+    const look = blockLook(o, minutesOfDay(now))
+    if (look === 'current' || look === 'upcoming') void starter.start(o)
+    else setLogId(o.id)
+  }
+
+  const logging = logId === null ? undefined : blocks.find((o) => o.id === logId)
+  const tolerances = settings?.tolerances ?? { onTimeMin: 10, lengthPct: 10 }
+
   const repeating = new Set(tasks.filter((t) => t.repeat.kind !== 'once').map((t) => t.id))
   const card = nowNext(spans, secondsOfDay(now))
 
@@ -106,12 +154,12 @@ export function TodayPage() {
 
       {ready && tasks.length === 0 && (
         <FirstRun
-          onAddBlock={() => setSheetOpen(true)}
+          onAddBlock={() => setSheet({ kind: 'new' })}
           onJotTodo={() => setTodoOpen(true)}
         />
       )}
 
-      {ready && tasks.length > 0 && blocks.length === 0 && <NothingToday onAddBlock={() => setSheetOpen(true)} />}
+      {ready && tasks.length > 0 && blocks.length === 0 && <NothingToday onAddBlock={() => setSheet({ kind: 'new' })} />}
 
       {showTimeline && (
         <>
@@ -128,22 +176,32 @@ export function TodayPage() {
               nowMinutes={lineMinutes}
               timeFormat={timeFormat}
               repeating={repeating}
-              onBlockTap={comingSoon}
+              tolerances={tolerances}
+              nowMs={nowMs}
+              onBlockOpen={(o) => void openBlock(o)}
+              onBlockQuick={quickTap}
             />
           </div>
         </>
       )}
 
-      {sheetOpen && (
+      {sheet && (
         <TaskSheet
-          mode={{ kind: 'new' }}
+          // A different sheet (for example Duplicate opened from Edit) starts fresh.
+          key={`${sheet.kind}-${'task' in sheet ? sheet.task.id : 'new'}`}
+          mode={sheet}
           tasks={tasks}
           timeFormat={timeFormat}
           today={date}
-          onDuplicate={() => undefined}
-          onClosed={() => setSheetOpen(false)}
+          initialScope="day"
+          onDuplicate={(task) => setSheet({ kind: 'duplicate', task })}
+          onClosed={() => setSheet(null)}
         />
       )}
+
+      {logging && <LogSheet key={logging.id} occurrence={logging} timeFormat={timeFormat} onClosed={() => setLogId(null)} />}
+
+      {starter.dialog}
 
       {todoOpen && (
         <TodoSheet
@@ -156,6 +214,7 @@ export function TodayPage() {
       )}
 
       <ComingSoonToast tap={soon} onDone={hideSoon} />
+      <ComingSoonToast tap={notice.tap} onDone={hideNotice} message={notice.message} />
     </div>
   )
 }

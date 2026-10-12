@@ -138,6 +138,7 @@ export function TaskSheet({
   tasks,
   timeFormat,
   today,
+  initialScope = 'future',
   onDuplicate,
   onClosed,
 }: {
@@ -146,6 +147,8 @@ export function TaskSheet({
   tasks: readonly Task[]
   timeFormat: TimeFormat
   today: string
+  /** Which "Apply changes to" choice starts selected (Today opens a coming block on "This day only"). */
+  initialScope?: Scope
   /** The Duplicate button of the Edit sheet: the page opens a New block sheet with a copy. */
   onDuplicate: (task: Task) => void
   onClosed: () => void
@@ -156,7 +159,7 @@ export function TaskSheet({
 
   const [initial] = useState(() => startingDraft(mode, today))
   const [draft, setDraft] = useState<Draft>(initial)
-  const [scope, setScope] = useState<Scope>('future')
+  const [scope, setScope] = useState<Scope>(initialScope)
   const [closing, setClosing] = useState(false)
   const [pending, setPending] = useState<'close' | 'duplicate' | null>(null)
   const [deleting, setDeleting] = useState<DeleteCopy | null>(null)
