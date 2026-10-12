@@ -82,6 +82,17 @@ export function formatRange(startMinutes: number, endMinutes: number, timeFormat
   return `${formatClock(startMinutes, timeFormat)} – ${formatClock(endMinutes, timeFormat)}`
 }
 
+/**
+ * A time span with am/pm written once when both ends share it: "6:30 – 7:30 am", "11:30 am – 12:30 pm",
+ * or "06:30 – 07:30" in 24-hour time. Takes "HH:mm" times.
+ */
+export function formatSpan(start: TimeOfDay, end: TimeOfDay, timeFormat: TimeFormat = '12h'): string {
+  const from = formatTime(start, timeFormat)
+  const to = formatTime(end, timeFormat)
+  if (timeFormat === '12h' && from.slice(-2) === to.slice(-2)) return `${from.slice(0, -3)} – ${to}`
+  return `${from} – ${to}`
+}
+
 /** The label at the start of an hour line: "7 am", "12 pm" (12h) or "07:00" (24h). */
 export function formatHourLabel(hour: number, timeFormat: TimeFormat = '12h'): string {
   if (timeFormat === '24h') return `${pad(hour % 24)}:00`

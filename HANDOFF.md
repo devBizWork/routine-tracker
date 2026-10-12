@@ -28,7 +28,7 @@ blocks, log what happened, review two adherence scores (Logged score and Day sco
 stays on the phone (no server, no accounts, no analytics, no runtime network calls). It is
 installed from Safari to the Home Screen and must work **offline**.
 
-Plan: **16 steps**, one prompt per step from the user ("Step N of 16: ..."). Steps 1 to 5 are done (plus fixes); Step 6 is built and waiting for the user's merge.
+Plan: **16 steps**, one prompt per step from the user ("Step N of 16: ..."). Steps 1 to 6 are done (plus fixes); Step 7 is built and waiting for the user's merge.
 Build ONLY the step you are given. Anything shown in a design but not yet built shows a small
 "Coming soon" note (no dead taps).
 
@@ -125,12 +125,12 @@ on GitHub; they can be deleted.
 
 ## 5. Remaining work, in order
 
-**Very next step:** the user merges and tests Step 6 on their iPhone and reports (see the test log in 7c). Fix
+**Very next step:** the user merges and tests Step 7 on their iPhone and reports (see the test log in 7c). Fix
 anything they report in its own small branch/PR first (like `step-5-fix`), then they send the next step's
 prompt. Do not start any step the user has not sent.
 
 The user supplies each step's prompt. Known from the conversation:
-- **Step 6: logging: DONE (waiting for the merge).** It was: (Start/Stop timer, "Done as planned", Skipped, manual times, notes; the Log time
+- **Step 6: logging: DONE (merged).** It was: (Start/Stop timer, "Done as planned", Skipped, manual times, notes; the Log time
   sheet in `LogTime.html`; actual bars, done/off-plan/skipped looks, "+15 min" tag and the running-timer chip
   from `States.html`/`Main.html`). Today's blocks and quick buttons currently say "Coming soon".
 - **Step 7: scores** (Day score chip on Today, Day review, "Review day" button now Coming soon).
@@ -186,7 +186,7 @@ npm run preview        # built app at http://localhost:4173/routine-tracker/ (se
 npm run icons          # redraws the placeholder icons in public/
 ```
 
-**Latest results (branch step-6):** type check clean, lint clean, **342 tests in 19 files
+**Latest results (branch step-7):** type check clean, lint clean, **408 tests in 21 files
 pass**, production build passes (about 1 s). CI (`checks`) is green on PR #6.
 
 Layout: `src/data/` (Dexie, API, rules, formatting), `src/app/` (shell, `BottomSheet`, `ActionSheet`,
@@ -207,6 +207,10 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 - **UI parts:** `BottomSheet` (full or `fit="content"`, swipe/backdrop/Escape, keyboard-safe),
   `ActionSheet` (iPhone-style menu), `ComingSoonToast`, `PageHeader`, `SwipeRow`, `TaskSheet` (new /
   edit / duplicate / schedule modes), `TimeBox/DateBox/SelectBox` (native pickers).
+- **Scoring (Step 7):** `src/scoring/` (pure: `scoreTask`, `scoreDay`, `startedByFor`, `wholePercents`; tested against the
+  spec's worked example), the Day review `src/pages/DayReviewPage.tsx` + `src/pages/review/` (`rows.ts` view-model,
+  `nav.ts` back link, `ScoreCards.tsx`, `PlannedVsActual.tsx`), and the chip in `today/TodayHeader.tsx`. Open the review
+  with `navigate(reviewPath(date), { state: reviewState('today' | 'calendar') })`.
 - **Logging (Step 6):** `src/data/log.ts` (pure rules: stop/done/skipped/clear patches, elapsed time, off-plan tags,
   progress line, "Still doing" check; tested), data API `startTimer, stopTimer, runningTimers, peekOccurrence`,
   `src/pages/log/LogSheet.tsx` + `logForm.ts` (the Log time sheet), `useStartTimer.tsx` (the one-timer question),
@@ -224,7 +228,8 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 | 2 | yes | Storage "Persistent" reported; Developer panel worked |
 | 3 and fixes | yes | keyboard bug and Duration label wrap were found here and fixed |
 | 4 | partly | red line under the arrow (fixed); swipe feel and Delete menu not reported |
-| 6 | pending | walkthrough is in the Step 6 PR |
+| 7 | pending | walkthrough is in the Step 7 PR |
+| 6 | pending | walkthrough is in the Step 6 PR (merged) |
 | 5 | yes | play button too big on a 15-min block, End could not be 8:00 pm, now line too faint, countdown too busy: all fixed in `step-5-fix` (recheck on the phone) |
 
 ## 8. Known bugs, unverified items, flaky tests, gotchas

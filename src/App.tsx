@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router'
 import { AppShell } from './app/AppShell'
 import { CalendarPage } from './pages/CalendarPage'
+import { DayReviewPage } from './pages/DayReviewPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { TasksPage } from './pages/TasksPage'
 import { TodayPage } from './pages/TodayPage'
@@ -14,6 +15,7 @@ export function App() {
         <Route element={<AppShell />}>
           <Route index element={<TodayPage />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="day/:date/review" element={<DayReviewPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

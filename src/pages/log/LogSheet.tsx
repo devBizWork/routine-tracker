@@ -21,7 +21,9 @@ import {
   updateOccurrence,
   type Occurrence,
   type TimeFormat,
+  type Tolerances,
 } from '../../data'
+import { taskScore } from '../../scoring'
 import { TimeBox } from '../tasks/fields'
 import {
   canSaveLog,
@@ -58,10 +60,13 @@ const iconProps = {
 export function LogSheet({
   occurrence: o,
   timeFormat,
+  tolerances,
   onClosed,
 }: {
   occurrence: Occurrence
   timeFormat: TimeFormat
+  /** The Settings tolerances the Task score uses. */
+  tolerances: Tolerances
   onClosed: () => void
 }) {
   const titleId = useId()
@@ -128,6 +133,14 @@ export function LogSheet({
   const startedText = timerStartText(o)
   const minutes = loggedMinutes(o, form, nowMs)
   const progress = minutes === null ? null : progressLine(o.plannedMinutes, minutes)
+  // The Task score of what is on the form right now (a timer still running has no score yet).
+  const score = running
+    ? null
+    : form.start !== '' && form.end !== '' && timeIssue === null
+      ? taskScore({ ...o, status: 'done', actualStart: form.start, actualEnd: form.end }, tolerances)
+      : o.status === 'skipped'
+        ? 0
+        : null
 
   const header = (
     <div className="flex items-center justify-between gap-2 px-4 pb-3">
@@ -360,7 +373,7 @@ export function LogSheet({
             ) : (
               <span className="text-muted">{formatDuration(o.plannedMinutes)} planned</span>
             )}
-            <span className="text-muted">Task score –</span>
+            <span className="text-muted">Task score {score === null ? '–' : `${Math.round(score * 100)}%`}</span>
           </div>
         </div>
 
