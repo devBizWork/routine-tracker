@@ -71,11 +71,12 @@ function LegendRow({
 }
 
 /**
- * The day split into Followed, Missed and Unknown (always 100% together), with the range the real
- * result lies in. A day that is fully logged has no Unknown, so it shows one number and no range.
+ * The day split into Followed, Missed and Unknown (always 100% together). A day that is fully logged
+ * has no Unknown, so it shows one number. (The "Real result" range was taken off the screen for now;
+ * scoreDay still works it out.)
  */
 export function DayScoreCard({ score }: { score: DayScore<Occurrence> }) {
-  const { status, percents, range, logged } = score
+  const { status, percents, logged } = score
   const complete = status === 'complete'
   const none = status === 'empty' || status === 'nothing-logged'
 
@@ -99,19 +100,7 @@ export function DayScoreCard({ score }: { score: DayScore<Occurrence> }) {
         <span className={`text-15 font-bold ${none ? 'text-muted' : 'text-primary'}`}>{caption}</span>
       </div>
 
-      <div className={`relative mt-0.5 ${complete || status === 'empty' ? '' : 'pt-[30px]'}`}>
-        {!complete && status !== 'empty' && (
-          <>
-            <div className="absolute top-0 right-0 left-1/2 flex justify-end pr-0.5 text-11-5 font-extrabold whitespace-nowrap">
-              Real result: {range.low}–{range.high}%
-            </div>
-            <div
-              aria-hidden="true"
-              className="absolute top-[18px] box-border h-[7px] rounded-t-3 border-2 border-b-0 border-ink"
-              style={{ left: `${range.low}%`, width: `${range.high - range.low}%` }}
-            />
-          </>
-        )}
+      <div className="mt-0.5">
         <div aria-hidden="true" className="flex h-[18px] gap-0.5" data-day-bar>
           {parts.length === 0 ? (
             <span className="flex-1 rounded-6" style={{ background: STRIPES }} />
