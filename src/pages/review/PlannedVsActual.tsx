@@ -3,8 +3,8 @@ import type { ReviewRow } from './rows'
 
 // The "Planned vs actual" list on the Day review (design/screens/DayReview.html): for each block,
 // its score, the plan and the actual times in words, and two thin bars on a shared time scale.
-// The bars use the same two colours on every row, as the legend says: every plan bar is grey-blue and
-// every actual bar is blue. A block with no actual time (skipped, or not logged) has no actual bar at
+// The bars use the same two colours on every row, as the legend says: every plan bar is navy and
+// every actual bar is green (time done). A block with no actual time (skipped, or not logged) has no actual bar at
 // all; its words and score pill say why.
 
 function ScorePill({ row }: { row: ReviewRow }) {
@@ -40,16 +40,16 @@ function Row({ row }: { row: ReviewRow }) {
       <span className="text-12-5 font-medium text-muted">
         {row.planText} · {row.actualText}
       </span>
-      <div aria-hidden="true" className="relative mt-0.5 h-4">
+      <div aria-hidden="true" className="relative mt-0.5 h-[19px]">
         <span
           data-bar="plan"
-          className="absolute top-0 h-1.5 rounded-3 bg-unknown-line"
+          className="absolute top-0 h-2 rounded-4 bg-plan-bar"
           style={{ left: `${row.planBar.left}%`, width: `${row.planBar.width}%` }}
         />
         {row.actualBar ? (
           <span
             data-bar="actual"
-            className="absolute top-[9px] h-1.5 rounded-3 bg-primary"
+            className="absolute top-[11px] h-2 rounded-4 bg-actual-bar"
             style={{ left: `${row.actualBar.left}%`, width: `${row.actualBar.width}%` }}
           />
         ) : null}
@@ -72,11 +72,11 @@ export function PlannedVsActual({ rows }: { rows: readonly ReviewRow[] }) {
         </h2>
         <span aria-hidden="true" className="flex gap-2.5 text-11 font-semibold text-muted">
           <span className="flex items-center gap-1">
-            <span className="h-[5px] w-3 rounded-3 bg-unknown-line" />
+            <span className="h-1.5 w-3 rounded-3 bg-plan-bar" />
             Plan
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-[5px] w-3 rounded-3 bg-primary" />
+            <span className="h-1.5 w-3 rounded-3 bg-actual-bar" />
             Actual
           </span>
         </span>
