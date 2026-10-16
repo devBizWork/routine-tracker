@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import { Link } from 'react-router'
 import type { Occurrence } from '../../data'
-import { toPercent, type DayScore } from '../../scoring'
+import { headlinePercent, type DayScore } from '../../scoring'
 import { reviewPath, reviewState } from '../review/nav'
 
 const soundIcon = (
@@ -29,7 +29,7 @@ const soundIcon = (
  */
 function DayScoreChip({ score, date }: { score: DayScore<Occurrence>; date: string }) {
   const none = score.status === 'empty' || score.status === 'nothing-logged'
-  const number = none ? null : score.status === 'complete' && score.logged !== null ? toPercent(score.logged) : score.percents.followed
+  const number = headlinePercent(score)
   const label = none
     ? 'Day score: nothing logged yet. Open day review'
     : `Day score${score.status === 'partial' ? ' so far' : ''} ${number} percent. Open day review`

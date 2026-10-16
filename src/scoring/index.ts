@@ -12,3 +12,4 @@ export {
   type DayStatus,
   type ScoredBlock,
 } from './dayScore'
+export { headlinePercent } from './display'

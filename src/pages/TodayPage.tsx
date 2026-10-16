@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useNavigate } from 'react-router'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
+import { clearAbsence, useAbsence } from '../app/away'
 import {
   defaultSettings,
   getDay,
@@ -39,6 +40,9 @@ import {
 } from './today/plan'
 import { TaskSheet, type SheetMode } from './tasks/TaskSheet'
 import { TodoSheet } from './tasks/TodoSheet'
+import { passedBlocks } from './review/flow'
+import { ReviewSheet } from './review/ReviewSheet'
+import { AwayCard } from './today/AwayCard'
 
 /** The now line moves in steps of this many seconds. */
 const LINE_STEP_SECONDS = 15
@@ -63,6 +67,9 @@ export function TodayPage() {
 
   const [sheet, setSheet] = useState<SheetMode | null>(null)
   const [logId, setLogId] = useState<string | null>(null)
+  // The blocks "Review today" steps through when opened from the While you were away card.
+  const [reviewIds, setReviewIds] = useState<string[] | null>(null)
+  const absence = useAbsence()
   // A short message at the bottom (a problem starting a timer, or opening a block). tap 0 = hidden.
   const [notice, setNotice] = useState({ tap: 0, message: '' })
   const hideNotice = useCallback(() => setNotice((n) => ({ ...n, tap: 0 })), [])
@@ -151,6 +158,13 @@ export function TodayPage() {
   const score = scoreDay(blocks, { startedBy: minutesOfDay(now) })
   const openReview = () => navigate(reviewPath(date), { state: reviewState('today') })
 
+  // What passed while the app was closed or in the background (shown once per absence).
+  const passed = absence && showTimeline ? passedBlocks(blocks, date, absence) : []
+  const logPassed = () => {
+    setReviewIds(passed.filter((p) => p.status === 'unknown').map((p) => p.occurrence.id))
+    clearAbsence()
+  }
+
   const repeating = new Set(tasks.filter((t) => t.repeat.kind !== 'once').map((t) => t.id))
   const card = nowNext(spans, secondsOfDay(now))
 
@@ -170,6 +184,15 @@ export function TodayPage() {
       {showTimeline && (
         <>
           <NowNextCard state={card} timeFormat={timeFormat} onReviewDay={openReview} />
+          {absence && passed.length > 0 && (
+            <AwayCard
+              absence={absence}
+              blocks={passed}
+              timeFormat={timeFormat}
+              onLogNow={logPassed}
+              onDismiss={clearAbsence}
+            />
+          )}
           <div
             ref={scroller}
             aria-label="Timeline"
@@ -213,6 +236,18 @@ export function TodayPage() {
         />}
 
       {starter.dialog}
+
+      {reviewIds && (
+        <ReviewSheet
+          date={date}
+          ids={reviewIds}
+          occurrences={blocks}
+          repeating={repeating}
+          timeFormat={timeFormat}
+          onDone={openReview}
+          onClosed={() => setReviewIds(null)}
+        />
+      )}
 
       {todoOpen && (
         <TodoSheet

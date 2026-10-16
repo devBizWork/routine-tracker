@@ -31,7 +31,20 @@
   opacity: 0;
 }
 
+/* Review today: the next block slides in from the right. */
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+.review-step {
+  animation: step-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .review-step,
   .sheet,
   .scrim {
     animation: none;
