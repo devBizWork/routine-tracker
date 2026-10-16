@@ -62,16 +62,17 @@ Each day gets two scores: the **Logged score** (how well you followed the plan o
 
 ### Per-task score
 
-A skipped task scores 0%. A done task earns 50% for doing it, plus up to 25% for starting on time and up to 25% for matching the planned duration.
+A task's score is **how much of its planned time you actually spent on plan, at the time it was planned**. It is the share of the planned minutes that your logged time overlaps.
 
 ```
-Task score = 0.5 + 0.25 T + 0.25 D
+Task score = (minutes your actual time overlaps the planned time) / (planned minutes)
 ```
 
-- **T (timing):** 1 if the task started within 10 minutes of plan, falling evenly to 0 at 60 minutes early or late.
-- **D (duration):** 1 if the actual time was within 10% of plan, falling evenly to 0 at zero time or double the plan.
-- **Weighting:** tasks count by planned minutes, so a 2-hour block matters more than a 10-minute one.
-- **Tolerances** (10 min, 10%, 60 min) are adjustable in Settings.
+- Done exactly as planned is 100%. Started late, stopped early or done at a different time scores only the part that matched the plan. A skipped task scores 0%.
+- Example: planned 2:50 to 3:08 pm (18 minutes), logged 2:53 to 2:57 pm. Four of the 18 planned minutes were spent on plan, so the score is 22%.
+- Running longer than the plan is not penalised in the score (all of the planned time was spent); the block shows a "+15 min" tag instead.
+- **Weighting:** tasks count by planned minutes, so a 2-hour block matters more than a 10-minute one. A task's weight times its score is just its matched minutes.
+- **Off-plan tolerances** (10 minutes, 10%) decide when a done block is shown as off plan (the apricot check and the "+15 min" or "Started 60 min late" tag). They do not change the score. The zero-credit limit (60 minutes) is not used by the score any more.
 
 ### The two calculations
 
@@ -80,7 +81,7 @@ Logged score = sum over logged (w_i * s_i) / sum over logged (w_i)
 Followed     = sum over logged (w_i * s_i) / sum over all planned (w_i)
 ```
 
-Here w is a task's planned minutes and s is its task score.
+Here w is a task's planned minutes and s is its task score, so w * s is the minutes spent on plan.
 
 - **Logged score:** "Of what you logged, here's how well you followed your plan." Always shown with its coverage, such as "Based on 160 of 200 planned minutes."
 - **Day score:** splits the whole plan into three parts that add to 100%: **Followed**, **Missed** (logged but off-plan or skipped), and **Unknown** (not logged). The true result lies between Followed (if every unknown was missed) and Followed + Unknown (if every unknown went to plan).
@@ -96,11 +97,11 @@ Display rules:
 | Task | Planned | Logged | Task score |
 | --- | --- | --- | --- |
 | Workout | 6:30–7:30 am (60 min) | 6:30–7:30 am | 100% |
-| Deep work | 9:00–10:20 am (80 min) | 10:00–11:20 am, started 60 min late | 75% |
+| Deep work | 9:00–10:20 am (80 min) | 10:00–11:20 am, started 60 min late | 25% (20 of 80 planned minutes: 10:00 to 10:20) |
 | Walk | 12:00–12:20 pm (20 min) | Skipped | 0% |
 | Reading | 9:00–9:40 pm (40 min) | Not logged | Unknown |
 
-Logged score: 75%, based on 160 of 200 planned minutes. Day score: 60% followed, 20% missed, 20% unknown, so the real result is somewhere between 60% and 80%.
+Logged score: 50%, based on 160 of 200 planned minutes. Day score: 40% followed, 40% missed, 20% unknown, so the real result is somewhere between 40% and 60%.
 
 ## Screens
 

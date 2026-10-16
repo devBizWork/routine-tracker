@@ -186,7 +186,7 @@ npm run preview        # built app at http://localhost:4173/routine-tracker/ (se
 npm run icons          # redraws the placeholder icons in public/
 ```
 
-**Latest results (branch step-7):** type check clean, lint clean, **408 tests in 21 files
+**Latest results (branch step-7):** type check clean, lint clean, **401 tests in 21 files
 pass**, production build passes (about 1 s). CI (`checks`) is green on PR #6.
 
 Layout: `src/data/` (Dexie, API, rules, formatting), `src/app/` (shell, `BottomSheet`, `ActionSheet`,
@@ -207,8 +207,8 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 - **UI parts:** `BottomSheet` (full or `fit="content"`, swipe/backdrop/Escape, keyboard-safe),
   `ActionSheet` (iPhone-style menu), `ComingSoonToast`, `PageHeader`, `SwipeRow`, `TaskSheet` (new /
   edit / duplicate / schedule modes), `TimeBox/DateBox/SelectBox` (native pickers).
-- **Scoring (Step 7):** `src/scoring/` (pure: `scoreTask`, `scoreDay`, `startedByFor`, `wholePercents`; tested against the
-  spec's worked example), the Day review `src/pages/DayReviewPage.tsx` + `src/pages/review/` (`rows.ts` view-model,
+- **Scoring (Step 7):** `src/scoring/` (pure: `scoreTask` = minutes of the actual time inside the planned time / planned minutes, `scoreDay`,
+  `startedByFor`, `wholePercents`; tested against the spec's worked example: Logged 50%, Day 40/40/20), the Day review `src/pages/DayReviewPage.tsx` + `src/pages/review/` (`rows.ts` view-model,
   `nav.ts` back link, `ScoreCards.tsx`, `PlannedVsActual.tsx`), and the chip in `today/TodayHeader.tsx`. Open the review
   with `navigate(reviewPath(date), { state: reviewState('today' | 'calendar') })`.
 - **Logging (Step 6):** `src/data/log.ts` (pure rules: stop/done/skipped/clear patches, elapsed time, off-plan tags,

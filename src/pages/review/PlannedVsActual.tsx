@@ -81,6 +81,9 @@ export function PlannedVsActual({ rows }: { rows: readonly ReviewRow[] }) {
           </span>
         </span>
       </div>
+      <p className="m-0 px-1 text-12-5 font-medium text-muted">
+        Each percentage is how much of the planned time you spent on plan, at the time it was planned.
+      </p>
       <ul className="m-0 list-none overflow-hidden rounded-22 border border-line bg-card p-0">
         {rows.map((row) => (
           <Row key={row.id} row={row} />

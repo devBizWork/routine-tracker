@@ -1,8 +1,9 @@
 import { timeToMinutes } from '../data/time'
-import { scoreTask, type ScoringBlock, type ScoringTolerances } from './taskScore'
+import { scoreTask, type ScoringBlock } from './taskScore'
 
 // The two scores of a day (docs/feature-spec.md, "The two calculations"). Tasks count by their
-// planned minutes (w), so a 2-hour block matters more than a 10-minute one.
+// planned minutes (w), so a 2-hour block matters more than a 10-minute one. A block's score s is the
+// share of its planned time that was spent on plan, so w * s is simply its matched minutes.
 //
 //   Logged score = sum over logged (w * s) / sum over logged (w)
 //   Followed     = sum over logged (w * s) / sum over all planned (w)
@@ -95,17 +96,13 @@ export function wholePercents(fractions: readonly number[]): number[] {
   return floors
 }
 
-export function scoreDay<T extends ScoringBlock>(
-  blocks: readonly T[],
-  tolerances: ScoringTolerances,
-  options: DayScoreOptions = {},
-): DayScore<T> {
+export function scoreDay<T extends ScoringBlock>(blocks: readonly T[], options: DayScoreOptions = {}): DayScore<T> {
   const counted = blocks.filter(
     (b) => b.plannedMinutes > 0 && (options.startedBy === undefined || timeToMinutes(b.plannedStart) <= options.startedBy),
   )
 
   const items: ScoredBlock<T>[] = counted.map((block) => {
-    const result = scoreTask(block, tolerances)
+    const result = scoreTask(block)
     return {
       block,
       state: result === null ? 'unknown' : block.status === 'skipped' ? 'skipped' : 'done',

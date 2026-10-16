@@ -148,7 +148,7 @@ export function TodayPage() {
   const logging = logId === null ? undefined : blocks.find((o) => o.id === logId)
   const tolerances = settings?.tolerances ?? defaultSettings().tolerances
   // The Day score so far: only blocks whose planned start has passed count.
-  const score = scoreDay(blocks, tolerances, { startedBy: minutesOfDay(now) })
+  const score = scoreDay(blocks, { startedBy: minutesOfDay(now) })
   const openReview = () => navigate(reviewPath(date), { state: reviewState('today') })
 
   const repeating = new Set(tasks.filter((t) => t.repeat.kind !== 'once').map((t) => t.id))
@@ -209,7 +209,6 @@ export function TodayPage() {
           key={logging.id}
           occurrence={logging}
           timeFormat={timeFormat}
-          tolerances={tolerances}
           onClosed={() => setLogId(null)}
         />}
 

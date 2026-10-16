@@ -57,7 +57,7 @@ function Review({ date }: { date: string }) {
 
   // On today only the blocks that have started count; a past day counts them all.
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
-  const score = scoreDay(blocks, tolerances, { startedBy: startedByFor(date, today, nowMinutes) })
+  const score = scoreDay(blocks, { startedBy: startedByFor(date, today, nowMinutes) })
   const rows = reviewRows(score.items, tolerances, timeFormat)
   const notCounted = blocks.filter((o) => o.plannedMinutes > 0).length - score.items.length
 

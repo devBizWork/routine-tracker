@@ -21,7 +21,6 @@ import {
   updateOccurrence,
   type Occurrence,
   type TimeFormat,
-  type Tolerances,
 } from '../../data'
 import { taskScore } from '../../scoring'
 import { TimeBox } from '../tasks/fields'
@@ -60,13 +59,10 @@ const iconProps = {
 export function LogSheet({
   occurrence: o,
   timeFormat,
-  tolerances,
   onClosed,
 }: {
   occurrence: Occurrence
   timeFormat: TimeFormat
-  /** The Settings tolerances the Task score uses. */
-  tolerances: Tolerances
   onClosed: () => void
 }) {
   const titleId = useId()
@@ -137,7 +133,7 @@ export function LogSheet({
   const score = running
     ? null
     : form.start !== '' && form.end !== '' && timeIssue === null
-      ? taskScore({ ...o, status: 'done', actualStart: form.start, actualEnd: form.end }, tolerances)
+      ? taskScore({ ...o, status: 'done', actualStart: form.start, actualEnd: form.end })
       : o.status === 'skipped'
         ? 0
         : null

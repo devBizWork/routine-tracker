@@ -1,20 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
-  durationCredit,
   loggedLength,
+  overlapMinutes,
   scoreDay,
   scoreTask,
   startedByFor,
   taskScore,
-  timingCredit,
   toPercent,
   wholePercents,
   type ScoringBlock,
-  type ScoringTolerances,
 } from './index'
-
-// The default Settings tolerances: 10 minutes, 10 percent, zero credit at 60 minutes.
-const TOL: ScoringTolerances = { onTimeMin: 10, lengthPct: 10, zeroCreditMin: 60 }
 
 function block(
   plannedStart: string,
@@ -33,116 +28,74 @@ function block(
 
 const hm = (h: number, m = 0) => h * 60 + m
 
-describe('timing credit T', () => {
-  it('is 1 within 10 minutes of the plan, early or late', () => {
-    expect(timingCredit(0, TOL)).toBe(1)
-    expect(timingCredit(10, TOL)).toBe(1)
-    expect(timingCredit(-10, TOL)).toBe(1)
+describe('how many minutes of two spans are the same minutes', () => {
+  it('counts only the part they share', () => {
+    expect(overlapMinutes(hm(9), hm(10), hm(9, 30), hm(10, 30))).toBe(30)
+    expect(overlapMinutes(hm(9), hm(10), hm(9), hm(10))).toBe(60)
+    expect(overlapMinutes(hm(9), hm(11), hm(9, 15), hm(9, 45))).toBe(30)
   })
 
-  it('falls evenly to 0 at 60 minutes early or late', () => {
-    expect(timingCredit(35, TOL)).toBeCloseTo(0.5)
-    expect(timingCredit(-35, TOL)).toBeCloseTo(0.5)
-    expect(timingCredit(60, TOL)).toBe(0)
-    expect(timingCredit(-60, TOL)).toBe(0)
-  })
-
-  it('stays 0 beyond 60 minutes', () => {
-    expect(timingCredit(61, TOL)).toBe(0)
-    expect(timingCredit(-240, TOL)).toBe(0)
-  })
-
-  it('follows the tolerances from Settings', () => {
-    const loose = { onTimeMin: 20, lengthPct: 10, zeroCreditMin: 120 }
-    expect(timingCredit(20, loose)).toBe(1)
-    expect(timingCredit(70, loose)).toBeCloseTo(0.5)
-  })
-
-  it('a zero-credit limit that is not above the on-time limit does not divide by zero', () => {
-    expect(timingCredit(11, { onTimeMin: 10, lengthPct: 10, zeroCreditMin: 10 })).toBe(0)
+  it('is 0 when they do not touch, even when one ends where the other starts', () => {
+    expect(overlapMinutes(hm(9), hm(10), hm(10), hm(11))).toBe(0)
+    expect(overlapMinutes(hm(9), hm(10), hm(14), hm(15))).toBe(0)
   })
 })
 
-describe('duration credit D', () => {
-  it('is 1 within 10% of the plan', () => {
-    expect(durationCredit(60, 60, TOL)).toBe(1)
-    expect(durationCredit(54, 60, TOL)).toBe(1)
-    expect(durationCredit(66, 60, TOL)).toBe(1)
+describe('the score of one block: the share of the planned time spent on plan', () => {
+  it('done exactly as planned is 100%', () => {
+    expect(taskScore(block('06:30', 60, { start: '06:30', end: '07:30' }))).toBe(1)
   })
 
-  it('falls evenly to 0 at no time when shorter', () => {
-    // 27 of 60 minutes: halfway between 0 and the 54 minutes that earn full credit.
-    expect(durationCredit(27, 60, TOL)).toBeCloseTo(0.5)
-    expect(durationCredit(0, 60, TOL)).toBe(0)
+  it('the case that looked wrong before: planned 2:50 to 3:08 pm, logged 2:53 to 2:57 pm', () => {
+    // 4 of the 18 planned minutes were spent on plan: 22%, not 81%.
+    const result = scoreTask(block('14:50', 18, { start: '14:53', end: '14:57' }))
+    expect(result?.matchedMinutes).toBe(4)
+    expect(result?.score).toBeCloseTo(4 / 18)
+    expect(toPercent(result?.score ?? 0)).toBe(22)
   })
 
-  it('falls evenly to 0 at double the plan when longer', () => {
-    // 93 of 60 minutes: halfway between 66 (full credit) and 120 (none).
-    expect(durationCredit(93, 60, TOL)).toBeCloseTo(0.5)
-    expect(durationCredit(120, 60, TOL)).toBe(0)
+  it('started late: only the part inside the planned time counts', () => {
+    // Planned 9:00 to 10:20, logged 10:00 to 11:20: just 10:00 to 10:20 matches, 20 of 80 minutes.
+    expect(taskScore(block('09:00', 80, { start: '10:00', end: '11:20' }))).toBeCloseTo(0.25)
+    // 15 minutes late on a 60-minute block: 45 of 60 minutes.
+    expect(taskScore(block('09:00', 60, { start: '09:15', end: '10:15' }))).toBeCloseTo(0.75)
   })
 
-  it('stays 0 for more than double the length', () => {
-    expect(durationCredit(121, 60, TOL)).toBe(0)
-    expect(durationCredit(600, 60, TOL)).toBe(0)
+  it('starting early counts the same way (only the planned minutes match)', () => {
+    // Planned 9:00 to 10:00, logged 8:30 to 9:30: 9:00 to 9:30 matches.
+    expect(taskScore(block('09:00', 60, { start: '08:30', end: '09:30' }))).toBeCloseTo(0.5)
   })
 
-  it('has no credit for a plan with no minutes', () => {
-    expect(durationCredit(30, 0, TOL)).toBe(0)
+  it('stopping early scores the part you did (a partial log)', () => {
+    // 57 of 90 minutes, started on time.
+    expect(taskScore(block('09:00', 90, { start: '09:00', end: '09:57' }))).toBeCloseTo(57 / 90)
   })
 
-  it('a 100% tolerance accepts anything up to double the plan', () => {
-    const wide = { ...TOL, lengthPct: 100 }
-    expect(durationCredit(5, 60, wide)).toBe(1)
-    expect(durationCredit(120, 60, wide)).toBe(1)
-    expect(durationCredit(121, 60, wide)).toBe(0)
-  })
-})
-
-describe('the score of one block', () => {
-  it('a block done exactly as planned scores 100%', () => {
-    expect(taskScore(block('06:30', 60, { start: '06:30', end: '07:30' }), TOL)).toBe(1)
+  it('doing the block at a different time of day scores 0', () => {
+    expect(taskScore(block('09:00', 60, { start: '14:00', end: '15:00' }))).toBe(0)
   })
 
-  it('the worked example: 60 minutes late with the right length scores 75%', () => {
-    expect(taskScore(block('09:00', 80, { start: '10:00', end: '11:20' }), TOL)).toBeCloseTo(0.75)
-  })
-
-  it('returns the parts too', () => {
-    const result = scoreTask(block('09:00', 80, { start: '10:00', end: '11:20' }), TOL)
-    expect(result).toEqual({ score: 0.75, timing: 0, duration: 1 })
+  it('running longer than planned is not punished: all of the planned time was spent', () => {
+    expect(taskScore(block('08:30', 30, { start: '08:30', end: '09:15' }))).toBe(1)
+    // More than double the length, started on time: still 100% of the planned time was spent.
+    expect(taskScore(block('09:00', 30, { start: '09:00', end: '10:30' }))).toBe(1)
   })
 
   it('a skipped block scores 0', () => {
-    expect(scoreTask(block('12:00', 20, { status: 'skipped' }), TOL)).toEqual({ score: 0, timing: 0, duration: 0 })
+    expect(scoreTask(block('12:00', 20, { status: 'skipped' }))).toEqual({ score: 0, matchedMinutes: 0 })
   })
 
   it('a block with no log has no score (Unknown)', () => {
-    expect(taskScore(block('21:00', 40), TOL)).toBeNull()
+    expect(taskScore(block('21:00', 40))).toBeNull()
   })
 
   it('a done block without usable times has no score either', () => {
-    expect(taskScore({ ...block('09:00', 60), status: 'done' }, TOL)).toBeNull()
-    expect(taskScore(block('09:00', 60, { start: '10:00', end: '09:00' }), TOL)).toBeNull()
+    expect(taskScore({ ...block('09:00', 60), status: 'done' })).toBeNull()
+    expect(taskScore(block('09:00', 60, { start: '10:00', end: '09:00' }))).toBeNull()
   })
 
-  it('starting early loses timing credit just like starting late', () => {
-    // 30 minutes early: T = 1 - 20/50 = 0.6, same length: D = 1.
-    expect(taskScore(block('09:00', 60, { start: '08:30', end: '09:30' }), TOL)).toBeCloseTo(0.5 + 0.25 * 0.6 + 0.25)
-    // An hour early earns no timing credit, like the worked example's hour late.
-    expect(taskScore(block('09:00', 80, { start: '08:00', end: '09:20' }), TOL)).toBeCloseTo(0.75)
-    // Two hours early still cannot go below the 50% for doing it.
-    expect(taskScore(block('09:00', 60, { start: '07:00', end: '08:00' }), TOL)).toBeCloseTo(0.75)
-  })
-
-  it('more than double the length earns no duration credit but keeps the 50% for doing it', () => {
-    expect(taskScore(block('09:00', 30, { start: '09:00', end: '10:10' }), TOL)).toBeCloseTo(0.75) // T=1, D=0
-    expect(taskScore(block('09:00', 30, { start: '10:00', end: '11:30' }), TOL)).toBeCloseTo(0.5) // T=0, D=0
-  })
-
-  it('a partial log (shorter than planned) scores between', () => {
-    // 57 of 90 minutes: D = (57/90) / 0.9 = 0.7037, T = 1.
-    expect(taskScore(block('09:00', 90, { start: '09:00', end: '09:57' }), TOL)).toBeCloseTo(0.5 + 0.25 + 0.25 * 0.7037, 3)
+  it('a block with no planned minutes has no score', () => {
+    expect(taskScore(block('09:00', 0, { start: '09:00', end: '09:30' }))).toBeNull()
   })
 
   it('reads the length of a log', () => {
@@ -154,35 +107,42 @@ describe('the score of one block', () => {
 // docs/feature-spec.md, "Worked example".
 const WORKED_EXAMPLE = [
   block('06:30', 60, { start: '06:30', end: '07:30' }), // Workout: 100%
-  block('09:00', 80, { start: '10:00', end: '11:20' }), // Deep work: 75%
+  block('09:00', 80, { start: '10:00', end: '11:20' }), // Deep work: 20 of 80 minutes = 25%
   block('12:00', 20, { status: 'skipped' }), // Walk: 0%
   block('21:00', 40), // Reading: not logged
 ]
 
 describe('the worked example from the spec', () => {
-  const day = scoreDay(WORKED_EXAMPLE, TOL)
+  const day = scoreDay(WORKED_EXAMPLE)
 
-  it('Logged score is 75%, based on 160 of 200 planned minutes', () => {
-    expect(day.logged).toBeCloseTo(0.75)
-    expect(toPercent(day.logged ?? 0)).toBe(75)
+  it('Logged score is 50%, based on 160 of 200 planned minutes', () => {
+    // 80 minutes were spent on plan out of the 160 planned minutes that were logged.
+    expect(day.logged).toBeCloseTo(0.5)
+    expect(toPercent(day.logged ?? 0)).toBe(50)
     expect(day.loggedMinutes).toBe(160)
     expect(day.plannedMinutes).toBe(200)
   })
 
-  it('Day score is 60% followed, 20% missed, 20% unknown', () => {
-    expect(day.followed).toBeCloseTo(0.6)
-    expect(day.missed).toBeCloseTo(0.2)
+  it('Day score is 40% followed, 40% missed, 20% unknown', () => {
+    expect(day.followed).toBeCloseTo(0.4)
+    expect(day.missed).toBeCloseTo(0.4)
     expect(day.unknown).toBeCloseTo(0.2)
-    expect(day.percents).toEqual({ followed: 60, missed: 20, unknown: 20 })
+    expect(day.percents).toEqual({ followed: 40, missed: 40, unknown: 20 })
   })
 
-  it('so the real result is somewhere between 60% and 80%', () => {
-    expect(day.range).toEqual({ low: 60, high: 80 })
+  it('so the real result is somewhere between 40% and 60%', () => {
+    expect(day.range).toEqual({ low: 40, high: 60 })
+  })
+
+  it('Followed is simply the minutes spent on plan out of all the planned minutes', () => {
+    const matched = day.items.reduce((sum, item) => sum + (scoreTask(item.block)?.matchedMinutes ?? 0), 0)
+    expect(matched).toBe(80)
+    expect(day.followed).toBeCloseTo(matched / day.plannedMinutes)
   })
 
   it('scores each block, with Unknown for the one not logged', () => {
     expect(day.items.map((i) => i.state)).toEqual(['done', 'done', 'skipped', 'unknown'])
-    expect(day.items.map((i) => (i.score === null ? null : Math.round(i.score * 100)))).toEqual([100, 75, 0, null])
+    expect(day.items.map((i) => (i.score === null ? null : Math.round(i.score * 100)))).toEqual([100, 25, 0, null])
     expect(day.items.map((i) => i.weight)).toEqual([60, 80, 20, 40])
   })
 
@@ -195,7 +155,7 @@ describe('the worked example from the spec', () => {
 
 describe('display rules', () => {
   it('a fully logged day has no Unknown, so one number is enough', () => {
-    const day = scoreDay(WORKED_EXAMPLE.slice(0, 3), TOL)
+    const day = scoreDay(WORKED_EXAMPLE.slice(0, 3))
     expect(day.status).toBe('complete')
     expect(day.unknown).toBe(0)
     expect(day.percents.unknown).toBe(0)
@@ -206,7 +166,7 @@ describe('display rules', () => {
   })
 
   it('nothing logged: the Logged score is "-" (null) and the Day bar is 100% Unknown', () => {
-    const day = scoreDay([block('09:00', 60), block('10:00', 30)], TOL)
+    const day = scoreDay([block('09:00', 60), block('10:00', 30)])
     expect(day.status).toBe('nothing-logged')
     expect(day.logged).toBeNull()
     expect(day.percents).toEqual({ followed: 0, missed: 0, unknown: 100 })
@@ -216,7 +176,7 @@ describe('display rules', () => {
 
   it('a block with a running timer is Unknown until it is stopped, but is not "left to log"', () => {
     const running = { ...block('09:00', 60), timerStartedAt: 1 }
-    const day = scoreDay([running], TOL)
+    const day = scoreDay([running])
     expect(day.status).toBe('nothing-logged')
     expect(day.unloggedCount).toBe(0)
   })
@@ -224,7 +184,7 @@ describe('display rules', () => {
 
 describe('edge cases', () => {
   it('no planned minutes at all: nothing to score', () => {
-    const day = scoreDay([], TOL)
+    const day = scoreDay([])
     expect(day.status).toBe('empty')
     expect(day.plannedMinutes).toBe(0)
     expect(day.logged).toBeNull()
@@ -233,50 +193,40 @@ describe('edge cases', () => {
   })
 
   it('blocks of 0 minutes carry no weight and are left out', () => {
-    const day = scoreDay([block('09:00', 0, { start: '09:00', end: '09:10' })], TOL)
+    const day = scoreDay([block('09:00', 0, { start: '09:00', end: '09:10' })])
     expect(day.status).toBe('empty')
     expect(day.items).toEqual([])
   })
 
   it('all skipped: Logged score is 0%, and it is all Missed', () => {
-    const day = scoreDay([block('09:00', 60, { status: 'skipped' }), block('11:00', 30, { status: 'skipped' })], TOL)
+    const day = scoreDay([block('09:00', 60, { status: 'skipped' }), block('11:00', 30, { status: 'skipped' })])
     expect(day.status).toBe('complete')
     expect(day.logged).toBe(0)
     expect(day.percents).toEqual({ followed: 0, missed: 100, unknown: 0 })
   })
 
   it('a skipped block still counts as logged coverage', () => {
-    const day = scoreDay([block('09:00', 60, { status: 'skipped' }), block('11:00', 60)], TOL)
+    const day = scoreDay([block('09:00', 60, { status: 'skipped' }), block('11:00', 60)])
     expect(day.loggedMinutes).toBe(60)
     expect(day.logged).toBe(0)
     expect(day.percents).toEqual({ followed: 0, missed: 50, unknown: 50 })
   })
 
-  it('more than double the length: the block still counts, with only the 50% (and timing)', () => {
-    const day = scoreDay([block('09:00', 30, { start: '09:00', end: '10:30' })], TOL)
-    expect(day.logged).toBeCloseTo(0.75)
-    expect(day.percents).toEqual({ followed: 75, missed: 25, unknown: 0 })
+  it('more than double the length, started on time: the whole plan was spent, so 100%', () => {
+    const day = scoreDay([block('09:00', 30, { start: '09:00', end: '10:30' })])
+    expect(day.logged).toBe(1)
+    expect(day.percents).toEqual({ followed: 100, missed: 0, unknown: 0 })
   })
 
-  it('starting early: both scores follow from the earlier start', () => {
-    const day = scoreDay([block('09:00', 60, { start: '08:30', end: '09:30' })], TOL)
-    expect(day.logged).toBeCloseTo(0.5 + 0.25 * 0.6 + 0.25)
+  it('starting early: only the planned minutes count', () => {
+    const day = scoreDay([block('09:00', 60, { start: '08:30', end: '09:30' })])
+    expect(day.logged).toBeCloseTo(0.5)
   })
 
   it('a longer block weighs more than a shorter one', () => {
-    const day = scoreDay(
-      [block('09:00', 120, { start: '09:00', end: '11:00' }), block('12:00', 10, { status: 'skipped' })],
-      TOL,
-    )
-    // (120 * 1 + 10 * 0) / 130
+    const day = scoreDay([block('09:00', 120, { start: '09:00', end: '11:00' }), block('12:00', 10, { status: 'skipped' })])
+    // (120 minutes spent on plan) / (130 logged planned minutes)
     expect(day.logged).toBeCloseTo(120 / 130)
-  })
-
-  it('uses the tolerances from Settings', () => {
-    const strict = { onTimeMin: 0, lengthPct: 0, zeroCreditMin: 10 }
-    const late = block('09:00', 60, { start: '09:05', end: '10:05' })
-    expect(scoreDay([late], TOL).logged).toBe(1)
-    expect(scoreDay([late], strict).logged).toBeCloseTo(0.5 + 0.25 * 0.5 + 0.25)
   })
 })
 
@@ -288,29 +238,29 @@ describe('today: only blocks that have started count', () => {
   ]
 
   it('leaves out a block whose planned start has not come', () => {
-    const day = scoreDay(today, TOL, { startedBy: hm(10) })
+    const day = scoreDay(today, { startedBy: hm(10) })
     expect(day.plannedMinutes).toBe(120)
     expect(day.percents).toEqual({ followed: 50, missed: 0, unknown: 50 })
     expect(day.items).toHaveLength(2)
   })
 
   it('counts a block from the minute it starts', () => {
-    expect(scoreDay(today, TOL, { startedBy: hm(15) }).plannedMinutes).toBe(180)
-    expect(scoreDay(today, TOL, { startedBy: hm(14, 59) }).plannedMinutes).toBe(120)
+    expect(scoreDay(today, { startedBy: hm(15) }).plannedMinutes).toBe(180)
+    expect(scoreDay(today, { startedBy: hm(14, 59) }).plannedMinutes).toBe(120)
   })
 
   it('before the first block starts there is nothing to score', () => {
-    expect(scoreDay(today, TOL, { startedBy: hm(5) }).status).toBe('empty')
+    expect(scoreDay(today, { startedBy: hm(5) }).status).toBe('empty')
   })
 
   it('a finished day counts everything', () => {
-    expect(scoreDay(today, TOL).plannedMinutes).toBe(180)
+    expect(scoreDay(today).plannedMinutes).toBe(180)
   })
 
   it('startedByFor: past day = all, today = now, future day = none', () => {
     expect(startedByFor('2026-10-07', '2026-10-08', hm(10))).toBeUndefined()
     expect(startedByFor('2026-10-08', '2026-10-08', hm(10))).toBe(hm(10))
-    expect(scoreDay(today, TOL, { startedBy: startedByFor('2026-10-09', '2026-10-08', hm(10)) }).status).toBe('empty')
+    expect(scoreDay(today, { startedBy: startedByFor('2026-10-09', '2026-10-08', hm(10)) }).status).toBe('empty')
   })
 })
 
@@ -341,10 +291,11 @@ describe('whole percentages add up to exactly 100', () => {
   })
 
   it('a day with awkward minutes still adds up on screen', () => {
-    const day = scoreDay(
-      [block('09:00', 70, { start: '09:00', end: '10:10' }), block('11:00', 30, { status: 'skipped' }), block('12:00', 35)],
-      TOL,
-    )
+    const day = scoreDay([
+      block('09:00', 70, { start: '09:05', end: '10:10' }),
+      block('11:00', 30, { status: 'skipped' }),
+      block('12:00', 35),
+    ])
     const { followed, missed, unknown } = day.percents
     expect(followed + missed + unknown).toBe(100)
   })
