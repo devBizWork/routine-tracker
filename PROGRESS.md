@@ -3,6 +3,11 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 7 fix (bar colours on the Day review):** the Planned vs actual bars used a different colour on every row
+  (the plan bar took the block's category colour, the actual bar was blue or apricot, skipped was an outline,
+  not logged was striped). Now every plan bar is the same grey-blue and every actual bar is the same blue, as the
+  legend says. A block with no actual time (skipped, not logged) draws no actual bar; its words and score pill say
+  why. How far a block drifted is still told by the apricot note under it. Branch `step-7-fix-colors`.
 - **Step 7:** the two adherence scores and the Day review screen. Tag: `step-7` (added after the merge).
   - **Scoring** (`src/scoring/`, pure functions with no screens or database): task score
     `0.5 + 0.25 T + 0.25 D` (a skipped block scores 0), timing credit T and duration credit D from the Settings
