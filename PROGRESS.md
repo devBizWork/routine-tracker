@@ -3,6 +3,7 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 7 fix 3 (bar colours stand out):** on the Day review every plan bar is now navy (#1E3A8A, token `--color-plan-bar`) and every actual bar is green (#1F9D55, token `--color-actual-bar`, time done), both a little thicker (8 px). The legend matches. Branch `step-7-fix-bar-colors`.
 - **Step 7 fix 2 (what the percentage means):** a block planned 2:50 to 3:08 pm with 2:53 to 2:57 pm logged scored 81%,
   because the old rule gave 50% for doing it and 25% for starting on time before counting the length. Now a block's
   score is **how much of its planned time you spent on plan, at the time it was planned** (the minutes the actual time
