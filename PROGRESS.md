@@ -3,6 +3,21 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 8:** logging later, and catching up when the app was closed. Tag: `step-8` (added after the merge).
+  - **Review today sheet** (`src/pages/review/ReviewSheet.tsx`, from `ReviewFlow.html`), opened from "Log remaining tasks"
+    on the Day review: steps through each unlogged block whose planned end has passed, in time order, with the
+    progress bar and "2 of 4", the block card (ROUTINE or ONE-OFF) and "What happened?": Done as planned, Done at
+    other times (Started and Ended open inline, then Save; Ended must be after Started), Skipped, Not sure (leave
+    Unknown) and Back. Each answer is saved at once, then a status line ("Plan the day · done as planned") with Undo
+    appears and the next block slides in. After the last block an "All caught up" card shows the updated Day score;
+    Done goes to the Day review. Close keeps every answer already given.
+  - **While you were away** (`src/pages/today/AwayCard.tsx`, from `WelcomeBack.html`): the app notes when it was last
+    in front (`src/app/away.ts`, every 30 seconds and when it goes to the background, kept in the database so it
+    survives closing). When it comes back after at least a minute away and blocks started or ended meanwhile, Today
+    shows the time span, those blocks with their status (Done, Skipped, Unknown, Now, Timer on), "Log these N now"
+    (Review today for just the Unknown ones) and Dismiss. Shown once per absence.
+  - The "Tap to turn on sounds" banner from the same design stays hidden until Step 11.
+  - 20 new tests (421 in all) in `src/pages/review/flow.test.ts`.
 - **Step 7 fix 4 (plan bar back to grey-blue):** navy overpowered the green, so the plan bars are back to the original grey-blue (#CBE2E8, token `--color-plan-bar`); actual bars stay green and both stay 8 px thick. Also in this branch: the "Real result: 52–64%" bracket above the Day score bar is removed (it looked like it was selecting the orange Missed part, which it was not). The range is still worked out by `scoreDay` and can come back later. Branch `step-7-fix-plan-bar`.
 - **Step 7 fix 3 (bar colours stand out):** on the Day review every plan bar is now navy (#1E3A8A, token `--color-plan-bar`) and every actual bar is green (#1F9D55, token `--color-actual-bar`, time done), both a little thicker (8 px). The legend matches. Branch `step-7-fix-bar-colors`.
 - **Step 7 fix 2 (what the percentage means):** a block planned 2:50 to 3:08 pm with 2:53 to 2:57 pm logged scored 81%,
@@ -157,6 +172,12 @@
 
 ## Known bugs / not yet verified
 
+- **Step 8 not yet checked on the iPhone.** Tested in a desktop browser at 390 px with a pretend clock and simulated
+  absences. Only the phone can confirm that closing the Home Screen app and opening it later shows "While you were
+  away", and the native time pickers in "Done, at other times".
+- **The app bundle is now 508 kB**, just over Vite's 500 kB advice, so the build prints a size warning. It is only a
+  warning (the app is still precached for offline use). Splitting it would mean changing the build settings; ask first.
+
 - **Step 7 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with a pretend clock and the
   spec's worked example added to a day: the review matches the numbers in the spec, the chip, the Task score while
   typing times, the three display states, a bad date, and the back link. Only the phone can confirm the look in the
@@ -230,6 +251,15 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 8 rules (in `src/pages/review/flow.ts`).**
+  - **"Log remaining tasks" and Review today** cover blocks with nothing logged whose planned end has passed (a block
+    still going on, or with a timer running, is not "left to log"). The badge count uses the same rule.
+  - **Undo** puts back exactly what the block had before that answer; **Back** shows the previous block again so its
+    answer can be changed. Not sure saves nothing.
+  - **"Done"** on All caught up goes to the Day review, from Today too.
+  - **Away** means at least one minute without the app in front. A block "passed" when it started or ended during that
+    time. A second absence before the card is dealt with is joined onto the first. Dismiss or "Log these N now" ends it.
 
 - **Step 7 rules (in `src/scoring/`).**
   - **Task score** (changed in Step 7 fix 2, replacing timing credit T and duration credit D): the share of the planned

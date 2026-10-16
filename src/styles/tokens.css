@@ -93,6 +93,7 @@
   --shadow-segment: 0 1px 3px rgb(14 26 32 / 0.14); /* selected segment of a switch */
   --shadow-inprogress: 0 8px 20px rgb(11 110 153 / 0.18); /* the block the now line is inside */
   --shadow-now-line: 0 0 0 1px rgb(255 255 255 / 0.7), 0 1px 6px rgb(215 38 61 / 0.35); /* the red line: white edge keeps it clear on any block color */
+  --shadow-away: 0 8px 22px rgb(14 26 32 / 0.08); /* the While you were away card */
   --shadow-now-dot: 0 0 0 4px rgb(215 38 61 / 0.18); /* soft halo around the dot */
 
   /* ---- Font sizes used in the screens ---- */

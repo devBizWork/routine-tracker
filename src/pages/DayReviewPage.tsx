@@ -1,13 +1,14 @@
 import { format } from 'date-fns'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useParams } from 'react-router'
-import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
-import { defaultSettings, getDay, parseDateKey, peekDay, readSettings, today as todayKey } from '../data'
+import { defaultSettings, getDay, hasEnded, listTasks, parseDateKey, peekDay, readSettings, today as todayKey } from '../data'
 import { useLiveQuery } from '../data/useLiveQuery'
 import { scoreDay, startedByFor } from '../scoring'
+import { blocksToReview } from './review/flow'
 import { backTarget, isReviewDate } from './review/nav'
 import { PlannedVsActual } from './review/PlannedVsActual'
+import { ReviewSheet } from './review/ReviewSheet'
 import { reviewRows } from './review/rows'
 import { DayScoreCard, LoggedScoreCard } from './review/ScoreCards'
 
@@ -48,7 +49,9 @@ function Review({ date }: { date: string }) {
   }, [date])
   const day = useLiveQuery(useCallback(() => peekDay(date), [date]))
 
-  const [soon, setSoon] = useState(0)
+  const tasks = useLiveQuery(listTasks)
+  // The blocks "Review today" steps through, fixed when it opens.
+  const [reviewIds, setReviewIds] = useState<string[] | null>(null)
 
   const ready = settings !== undefined && day?.created === true
   const tolerances = settings?.tolerances ?? defaultSettings().tolerances
@@ -59,6 +62,9 @@ function Review({ date }: { date: string }) {
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
   const score = scoreDay(blocks, { startedBy: startedByFor(date, today, nowMinutes) })
   const rows = reviewRows(score.items, tolerances, timeFormat)
+  // "Log remaining tasks": the blocks with nothing logged whose planned end has passed.
+  const toReview = blocksToReview(blocks, date, today, nowMinutes)
+  const repeating = new Set((tasks ?? []).filter((t) => t.repeat.kind !== 'once' && !hasEnded(t, date)).map((t) => t.id))
   const notCounted = blocks.filter((o) => o.plannedMinutes > 0).length - score.items.length
 
   return (
@@ -107,22 +113,32 @@ function Review({ date }: { date: string }) {
             </p>
           )}
 
-          {score.unloggedCount > 0 && (
+          {toReview.length > 0 && (
             <button
               type="button"
-              onClick={() => setSoon((n) => n + 1)}
+              onClick={() => setReviewIds(toReview.map((o) => o.id))}
               className="mx-4 mt-4 flex h-[54px] items-center justify-center gap-2.5 rounded-27 border-0 bg-primary text-16 font-bold text-on-primary"
             >
               Log remaining tasks
               <span className="flex h-6 min-w-6 items-center justify-center rounded-12 bg-pill px-1.5 text-13 font-extrabold text-primary">
-                {score.unloggedCount}
+                {toReview.length}
               </span>
             </button>
           )}
         </>
       )}
 
-      <ComingSoonToast tap={soon} onDone={() => setSoon(0)} />
+      {reviewIds && (
+        <ReviewSheet
+          date={date}
+          ids={reviewIds}
+          occurrences={blocks}
+          repeating={repeating}
+          timeFormat={timeFormat}
+          onDone={() => setReviewIds(null)}
+          onClosed={() => setReviewIds(null)}
+        />
+      )}
     </div>
   )
 }
