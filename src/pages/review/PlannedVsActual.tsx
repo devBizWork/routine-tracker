@@ -3,7 +3,7 @@ import type { ReviewRow } from './rows'
 
 // The "Planned vs actual" list on the Day review (design/screens/DayReview.html): for each block,
 // its score, the plan and the actual times in words, and two thin bars on a shared time scale.
-// The bars use the same two colours on every row, as the legend says: every plan bar is navy and
+// The bars use the same two colours on every row, as the legend says: every plan bar is grey-blue and
 // every actual bar is green (time done). A block with no actual time (skipped, or not logged) has no actual bar at
 // all; its words and score pill say why.
 

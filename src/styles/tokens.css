@@ -24,7 +24,7 @@
 
   --color-missed: #f28a3c; /* Missed */
   --color-missed-text: #b4501c; /* small orange text (keeps contrast) */
-  --color-plan-bar: #1e3a8a; /* navy: the plan bars on the Day review (10.4:1 on white) */
+  --color-plan-bar: #cbe2e8; /* grey-blue: the plan bars on the Day review, quieter than the green actual bars */
   --color-actual-bar: #1f9d55; /* green: the actual bars on the Day review, time done (3.5:1 on white) */
   --color-missed-soft: #fff0e4; /* pale apricot behind small orange text (4.6:1) */
 
