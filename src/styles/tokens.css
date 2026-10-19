@@ -32,6 +32,7 @@
   --color-unknown-stripe-b: #f8fcfd;
   --color-unknown-edge: #8aa6ae; /* dashed edge */
   --color-unknown-line: #cbe2e8; /* border of the Unknown swatch */
+  --color-unknown-ring: #a3b4ba; /* the Unknown (not logged) part of the score rings: a darker grey that shows */
 
   --color-now-line: #d7263d; /* the red now line on the timeline (white text on it: 4.96:1) */
   --color-now-fill: #d9f4f8; /* Now card */

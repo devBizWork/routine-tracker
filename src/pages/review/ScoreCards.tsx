@@ -1,51 +1,15 @@
 import type { Occurrence } from '../../data'
 import { toPercent, type DayScore } from '../../scoring'
 
-// The two score cards at the top of the Day review (design/screens/DayReview.html).
+// The Day score card at the top of the Day review (design/screens/DayReview.html). The separate
+// Logged score card was removed: it was Followed / (Followed + Missed), already visible in the bar,
+// and on a lightly logged day it read as a misleadingly high number.
 
 const STRIPES = 'repeating-linear-gradient(135deg, var(--color-unknown-stripe-a) 0 4px, var(--color-unknown-stripe-b) 4px 8px)'
 const SWATCH_STRIPES =
   'repeating-linear-gradient(135deg, var(--color-unknown-stripe-a) 0 3px, var(--color-unknown-stripe-b) 3px 6px)'
 
 const card = 'mx-4 flex flex-col gap-2.5 rounded-24 border border-line bg-card px-[18px] pt-4 pb-[18px]'
-
-/** "How well you kept to the plan on the blocks you logged", with how much of the plan that covers. */
-export function LoggedScoreCard({ score }: { score: DayScore<Occurrence> }) {
-  const { logged, loggedMinutes, plannedMinutes, status } = score
-  const coverage = plannedMinutes > 0 ? (loggedMinutes / plannedMinutes) * 100 : 0
-  const about =
-    status === 'empty'
-      ? 'Nothing is planned yet, so there is nothing to score.'
-      : logged === null
-        ? 'Nothing is logged yet, so there is no score.'
-        : 'How much of the planned time you spent on plan, on the blocks you logged.'
-
-  return (
-    <section aria-labelledby="logged-h" className={`${card} mt-4`}>
-      <h2 id="logged-h" className="m-0 font-sans text-13 font-bold text-muted">
-        Logged score
-      </h2>
-      <div className="flex items-center gap-3.5">
-        <span className="font-display text-48 leading-none font-bold tracking-[-0.02em]">
-          {logged === null ? '–' : `${toPercent(logged)}%`}
-        </span>
-        <span className="text-13 leading-[1.4] font-medium text-muted">{about}</span>
-      </div>
-      <div className="mt-0.5 flex flex-col gap-1.5">
-        <div aria-hidden="true" className="h-2 rounded-4" style={{ background: STRIPES }}>
-          <div className="h-2 rounded-4 bg-ink" style={{ width: `${coverage}%` }} />
-        </div>
-        <span className="text-12-5 font-semibold text-muted">
-          Based on{' '}
-          <span className="font-extrabold text-ink">
-            {loggedMinutes} of {plannedMinutes}
-          </span>{' '}
-          planned minutes
-        </span>
-      </div>
-    </section>
-  )
-}
 
 function LegendRow({
   swatch,
@@ -123,6 +87,14 @@ export function DayScoreCard({ score }: { score: DayScore<Occurrence> }) {
       {complete && (
         <p className="m-0 text-12-5 font-medium text-muted">Every block is logged, so this is the whole day.</p>
       )}
+
+      <p className="m-0 text-12-5 font-semibold text-muted">
+        Based on{' '}
+        <span className="font-extrabold text-ink">
+          {score.loggedMinutes} of {score.plannedMinutes}
+        </span>{' '}
+        planned minutes logged
+      </p>
 
       <div className="mt-1 flex flex-col">
         <LegendRow

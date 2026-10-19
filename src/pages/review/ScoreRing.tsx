@@ -1,4 +1,4 @@
-// The small Day score ring (Followed blue, Missed apricot, the rest is the grey track) and the
+// The small Day score ring (Followed blue, Missed apricot, the rest, Unknown, is a darker grey track) and the
 // three-part day bar (Followed, Missed, Unknown). Used by the Today chip, the Calendar and the Day
 // screen, always drawn from the Step 7 percentages.
 
@@ -18,7 +18,7 @@ export function ScoreRing({
 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 36 36" aria-hidden="true">
-      <circle cx="18" cy="18" r="14" fill="none" stroke="var(--color-line)" strokeWidth={stroke} />
+      <circle cx="18" cy="18" r="14" fill="none" stroke="var(--color-unknown-ring)" strokeWidth={stroke} />
       {followed > 0 && (
         <circle
           cx="18"

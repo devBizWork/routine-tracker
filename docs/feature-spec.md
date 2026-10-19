@@ -46,7 +46,7 @@ Five features make up v1: a to-do list of tasks and routines, a day timeline cal
 
 ### 4. Adherence scoring
 
-- **Two scores per day** so missing logs never silently count as failure: a Logged score and a Day score (detailed in the next section).
+- **A Day score per day** that never lets missing logs silently count as failure: unlogged time is kept apart as Unknown, and the share of the day that was logged is always shown (detailed in the next section).
 - **Trends:** weekly and monthly view of both scores and of how much of each day was logged.
 
 ### 5. Task-change sounds
@@ -58,7 +58,7 @@ Five features make up v1: a to-do list of tasks and routines, a day timeline cal
 
 ## Adherence scoring
 
-Each day gets two scores: the **Logged score** (how well you followed the plan on the tasks you recorded) and the **Day score** (how much of the whole plan is confirmed followed, with unlogged time kept apart as Unknown).
+Each day gets a **Day score**: how much of the whole plan is confirmed followed, with unlogged time kept apart as Unknown, shown with how much of the day was logged ("Based on 160 of 200 planned minutes logged"). (A separate Logged score, Followed / (Followed + Missed), was shown in earlier versions and removed: the Day score bar already shows it, and on a lightly logged day it read as a misleadingly high number. The app still works it out.)
 
 ### Per-task score
 
@@ -83,13 +83,13 @@ Followed     = sum over logged (w_i * s_i) / sum over all planned (w_i)
 
 Here w is a task's planned minutes and s is its task score, so w * s is the minutes spent on plan.
 
-- **Logged score:** "Of what you logged, here's how well you followed your plan." Always shown with its coverage, such as "Based on 160 of 200 planned minutes."
+- **Coverage:** how many of the planned minutes are logged, such as "Based on 160 of 200 planned minutes logged."
 - **Day score:** splits the whole plan into three parts that add to 100%: **Followed**, **Missed** (logged but off-plan or skipped), and **Unknown** (not logged). The true result lies between Followed (if every unknown was missed) and Followed + Unknown (if every unknown went to plan).
 
 Display rules:
 
 - **Fully logged day:** Unknown is 0% and both scores match, so show one number.
-- **Nothing logged:** the Logged score shows "–" and the Day score bar is 100% Unknown.
+- **Nothing logged:** the Day score shows "–" and its bar is 100% Unknown.
 - **Today in progress:** only tasks whose planned start has passed are counted.
 
 ### Worked example
@@ -101,7 +101,7 @@ Display rules:
 | Walk | 12:00–12:20 pm (20 min) | Skipped | 0% |
 | Reading | 9:00–9:40 pm (40 min) | Not logged | Unknown |
 
-Logged score: 50%, based on 160 of 200 planned minutes. Day score: 40% followed, 40% missed, 20% unknown, so the real result is somewhere between 40% and 60%.
+Day score: 40% followed, 40% missed, 20% unknown, based on 160 of 200 planned minutes logged, so the real result is somewhere between 40% and 60%. (The no-longer-shown Logged score would be 50%.)
 
 ## Screens
 
@@ -114,7 +114,7 @@ Eight screens cover v1, with Today as the home screen and a bottom tab bar for T
 | Tasks | Manage the to-do list | Routines and one-off tasks grouped; unscheduled inbox; add button; repeat and time shown on each row |
 | Add / edit task (sheet) | Create or change a task | Title, start time, duration, repeat days, color, sound override, notes; "This day only / This and future days" choice on edit |
 | Log time (sheet) | Record what happened | Start/Stop timer; Done as planned; Skipped; manual start and end; note |
-| Day review | See how the day went | Logged score with coverage; Followed / Missed / Unknown bar with the possible range; per-task list of planned vs. actual; "Log remaining tasks" button |
+| Day review | See how the day went | Day score with the Followed / Missed / Unknown bar and coverage; per-task list of planned vs. actual; "Log remaining tasks" button |
 | Trends | Track adherence over time | Weekly and monthly charts of both scores and of logging coverage; most-skipped tasks |
 | Settings | Configure the app | Sounds (master toggle, chime choice, test button, 5-min warning, quiet hours); day hours; 12/24-hour time; scoring tolerances; Backup and restore (export to Files, import, last backup date) |
 

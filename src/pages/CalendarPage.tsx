@@ -5,7 +5,7 @@ import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
 import { listTasks, parseDateKey, peekRange, toDateKey, type DateKey } from '../data'
 import { useLiveQuery } from '../data/useLiveQuery'
-import { headlinePercent, toPercent } from '../scoring'
+import { headlinePercent } from '../scoring'
 import {
   dayInfo,
   firstDataDate,
@@ -76,9 +76,9 @@ function DayCell({
       aria-label={label}
       aria-pressed={selected}
       onClick={onSelect}
-      className={`relative flex items-center justify-center border-0 bg-transparent p-0 text-14 ${
+      className={`relative flex items-center justify-center rounded-14 border-0 p-0 text-14 ${
         outside ? 'text-muted' : 'text-ink'
-      } ${isToday ? 'font-extrabold' : 'font-semibold'}`}
+      } ${isToday || selected ? 'font-extrabold' : 'font-semibold'} ${selected ? 'bg-card ring-2 ring-ink ring-inset' : 'bg-transparent'}`}
     >
       {ring && (
         <span className="absolute inset-0 flex items-center justify-center">
@@ -87,7 +87,7 @@ function DayCell({
       )}
       <span
         className={`relative flex size-7 items-center justify-center rounded-full ${
-          selected ? 'bg-primary font-bold text-on-primary' : isToday ? 'bg-pill text-primary' : ''
+          isToday ? 'bg-pill text-primary' : ''
         }`}
       >
         {number}
@@ -176,12 +176,9 @@ function DaySummary({
             </span>
           </div>
           <div className="flex items-baseline justify-between gap-2 border-t border-line pt-3 text-13">
-            <span className="font-semibold text-muted">Logged score</span>
+            <span className="font-semibold text-muted">Logged</span>
             <span className="font-bold">
-              {score.logged === null ? '–' : `${toPercent(score.logged)}%`}{' '}
-              <span className="font-medium text-muted">
-                · {score.loggedMinutes} of {score.plannedMinutes} min logged
-              </span>
+              {score.loggedMinutes} of {score.plannedMinutes} min
             </span>
           </div>
         </>
@@ -307,7 +304,7 @@ export function CalendarPage() {
           Missed
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="box-border size-2.5 rounded-5 border border-unknown-line bg-line" />
+          <span className="size-2.5 rounded-5 bg-unknown-ring" />
           Unknown
         </span>
       </div>
