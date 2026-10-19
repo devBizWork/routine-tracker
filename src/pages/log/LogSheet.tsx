@@ -59,10 +59,13 @@ const iconProps = {
 export function LogSheet({
   occurrence: o,
   timeFormat,
+  allowTimer = true,
   onClosed,
 }: {
   occurrence: Occurrence
   timeFormat: TimeFormat
+  /** False on other days than today: no Start timer card there. */
+  allowTimer?: boolean
   onClosed: () => void
 }) {
   const titleId = useId()
@@ -248,7 +251,7 @@ export function LogSheet({
             </button>
           </div>
         )}
-        {!running && canStartTimer(o) && (
+        {!running && allowTimer && canStartTimer(o) && (
           <button
             type="button"
             onClick={() => void startTimer()}

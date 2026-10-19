@@ -10,6 +10,11 @@ export function reviewPath(date: string): string {
   return `/day/${date}/review`
 }
 
+/** The address of a day's timeline: #/day/2026-10-05 */
+export function dayPath(date: string): string {
+  return `/day/${date}`
+}
+
 /** What to pass as `state` when opening the review, so Back knows where to go. */
 export function reviewState(from: ReviewOrigin): { from: ReviewOrigin } {
   return { from }

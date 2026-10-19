@@ -23,6 +23,7 @@ export const {
   peekDay,
   updateOccurrence,
   peekOccurrence,
+  peekRange,
   runningTimers,
   startTimer,
   stopTimer,

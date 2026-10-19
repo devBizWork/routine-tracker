@@ -387,6 +387,22 @@ export function createDataApi(options: DataApiOptions = {}) {
     })
   }
 
+  /**
+   * A stretch of days, read only (nothing is created): which of them already have their blocks,
+   * those blocks, and the first day that has ever been created (null if none). For the Calendar.
+   */
+  async function peekRange(
+    from: DateKey,
+    to: DateKey,
+  ): Promise<{ created: DateKey[]; occurrences: Occurrence[]; firstDay: DateKey | null }> {
+    requireDate(from)
+    requireDate(to)
+    const created = (await db.days.where('date').between(from, to, true, true).primaryKeys()) as DateKey[]
+    const occurrences = sortOccurrences(await db.occurrences.where('date').between(from, to, true, true).toArray())
+    const first = await db.days.orderBy('date').first()
+    return { created, occurrences, firstDay: first?.date ?? null }
+  }
+
   /** One block, read only (no day is created), or undefined if it is gone. */
   async function peekOccurrence(id: string): Promise<Occurrence | undefined> {
     return db.occurrences.get(id)
@@ -579,6 +595,7 @@ export function createDataApi(options: DataApiOptions = {}) {
     peekDay,
     updateOccurrence,
     peekOccurrence,
+    peekRange,
     runningTimers,
     startTimer,
     stopTimer,

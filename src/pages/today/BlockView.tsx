@@ -168,6 +168,7 @@ export function BlockView({
   nowMs,
   onOpen,
   onQuick,
+  canStart = true,
 }: {
   block: PlacedBlock
   look: BlockLook
@@ -180,6 +181,8 @@ export function BlockView({
   onOpen: () => void
   /** Tap on the round button. */
   onQuick: () => void
+  /** False on other days than today: a block still to come has no play button there. */
+  canStart?: boolean
 }) {
   const { occurrence: o } = block
   const twoLines = block.height >= TWO_LINES_FROM
@@ -330,7 +333,9 @@ export function BlockView({
         </>
       )}
 
-      <QuickButton look={look} title={o.title} offPlan={offPlan} onTap={onQuick} room={buttonRoom} />
+      {(canStart || (look !== 'upcoming' && look !== 'current')) && (
+        <QuickButton look={look} title={o.title} offPlan={offPlan} onTap={onQuick} room={buttonRoom} />
+      )}
     </div>
   )
 }

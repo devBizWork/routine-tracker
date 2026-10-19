@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import type { Occurrence } from '../../data'
 import { headlinePercent, type DayScore } from '../../scoring'
 import { reviewPath, reviewState } from '../review/nav'
+import { ScoreRing } from '../review/ScoreRing'
 
 const soundIcon = (
   <svg
@@ -41,36 +42,7 @@ function DayScoreChip({ score, date }: { score: DayScore<Occurrence>; date: stri
       aria-label={label}
       className="box-border flex h-11 items-center gap-2 rounded-22 border border-line bg-card pr-3.5 pl-2 text-ink no-underline"
     >
-      <svg width="28" height="28" viewBox="0 0 36 36" aria-hidden="true">
-        <circle cx="18" cy="18" r="14" fill="none" stroke="var(--color-line)" strokeWidth="5" />
-        {!none && score.percents.followed > 0 && (
-          <circle
-            cx="18"
-            cy="18"
-            r="14"
-            fill="none"
-            stroke="var(--color-followed)"
-            strokeWidth="5"
-            pathLength="100"
-            strokeDasharray={`${score.percents.followed} 100`}
-            transform="rotate(-90 18 18)"
-          />
-        )}
-        {!none && score.percents.missed > 0 && (
-          <circle
-            cx="18"
-            cy="18"
-            r="14"
-            fill="none"
-            stroke="var(--color-missed)"
-            strokeWidth="5"
-            pathLength="100"
-            strokeDasharray={`${score.percents.missed} 100`}
-            strokeDashoffset={-score.percents.followed}
-            transform="rotate(-90 18 18)"
-          />
-        )}
-      </svg>
+      <ScoreRing followed={none ? 0 : score.percents.followed} missed={none ? 0 : score.percents.missed} />
       <span className="flex flex-col leading-[1.1]">
         <span className="text-10 font-extrabold tracking-[0.06em] text-muted">DAY</span>
         <span className="text-15 font-bold">{number === null ? '–' : `${number}%`}</span>

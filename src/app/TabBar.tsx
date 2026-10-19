@@ -1,10 +1,14 @@
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 import { TabIcon } from './TabIcon'
 import { TABS } from './tabs'
+
+/** A Day screen (#/day/2026-10-05) belongs to the Calendar tab. */
+const DAY_SCREEN = /^\/day\/[^/]+$/
 
 // Layout copied from the <nav> in design/screens/Main.html. The bottom padding grows
 // with the iPhone home indicator (safe area) so the labels never sit underneath it.
 export function TabBar() {
+  const onDayScreen = DAY_SCREEN.test(useLocation().pathname)
   return (
     <nav
       aria-label="Main"
@@ -15,31 +19,34 @@ export function TabBar() {
         paddingRight: 'max(0.75rem, var(--safe-right))',
       }}
     >
-      {TABS.map((tab) => (
-        <NavLink
-          key={tab.id}
-          to={tab.to}
-          end={tab.to === '/'}
-          className={({ isActive }) =>
-            `flex min-h-11 flex-col items-center justify-center gap-[3px] text-11 ${
-              isActive ? 'font-bold text-primary' : 'font-semibold text-muted'
-            }`
-          }
-        >
-          {({ isActive }) => (
-            <>
-              <span
-                className={`flex h-7 w-13 items-center justify-center rounded-14 ${
-                  isActive ? 'bg-pill' : ''
-                }`}
-              >
-                <TabIcon id={tab.id} active={isActive} />
-              </span>
-              {tab.label}
-            </>
-          )}
-        </NavLink>
-      ))}
+      {TABS.map((tab) => {
+        const extra = onDayScreen && tab.id === 'calendar'
+        return (
+          <NavLink
+            key={tab.id}
+            to={tab.to}
+            end={tab.to === '/'}
+            className={({ isActive }) =>
+              `flex min-h-11 flex-col items-center justify-center gap-[3px] text-11 ${
+                isActive || extra ? 'font-bold text-primary' : 'font-semibold text-muted'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <span
+                  className={`flex h-7 w-13 items-center justify-center rounded-14 ${
+                    isActive || extra ? 'bg-pill' : ''
+                  }`}
+                >
+                  <TabIcon id={tab.id} active={isActive || extra} />
+                </span>
+                {tab.label}
+              </>
+            )}
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }

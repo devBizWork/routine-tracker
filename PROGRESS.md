@@ -3,6 +3,23 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 9:** the Calendar tab and viewing any day. Tag: `step-9` (added after the merge).
+  - **Calendar** (`CalendarPage.tsx`, from `Calendar.html`): month title, previous and next month, a Monday-first grid
+    with today marked, a small ring on each day with a score (Followed blue and Missed apricot from the Step 7 Day
+    score), the legend, and the Trends button (Coming soon until Step 10).
+  - **Day summary card** for the selected day: weekday and date, "4 blocks · 200 min", the Day score (headline
+    number), the Followed / Missed / Unknown bar and line, the Logged score with "160 of 200 min logged", and Open
+    timeline and Review day. Days to come show only how many blocks are planned (no score, no Review day); days before
+    any data show nothing.
+  - **Day screen** at `#/day/:date` (`DayPage.tsx`, from `Day.html`): back to Calendar, Review link (past days), the week
+    strip (tap to switch days, rings on each), the score card that opens Day review, and the timeline with planned
+    blocks and actual bars, opened at the first block. Past days can be logged (Log time, without "Start timer"); days
+    to come have no play buttons and their blocks open the edit sheet on "This day only". Today's date goes to the
+    Today tab. The Calendar tab stays highlighted on a Day screen.
+  - The Calendar remembers the month and the selected day while the app is open.
+  - All rings and cards use `scoreDay` (Step 7); a day never opened shows its plan from the tasks, worked out in memory
+    without saving anything. New read-only data call `peekRange(from, to)`.
+  - 14 new tests (435 in all) in `src/pages/calendar/month.test.ts`.
 - **Step 8:** logging later, and catching up when the app was closed. Tag: `step-8` (added after the merge).
   - **Review today sheet** (`src/pages/review/ReviewSheet.tsx`, from `ReviewFlow.html`), opened from "Log remaining tasks"
     on the Day review: steps through each unlogged block whose planned end has passed, in time order, with the
@@ -172,6 +189,13 @@
 
 ## Known bugs / not yet verified
 
+- **Step 9 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with sample data. Only the
+  phone can confirm the feel of the month grid and the week strip under a finger.
+- **No "Real result" range on the Calendar card or the Day screen**, although Step 9 asked for it, because it was taken
+  off the Day review in the Step 7 fixes. `scoreDay` still works it out; it can be shown as text ("could be up to 80%").
+- **The Day screen does not show the dashed "Actually 10:00 – 11:20" outline or the per-block score text** from
+  `Day.html`; it uses the same block looks and actual bars as Today.
+
 - **Step 8 not yet checked on the iPhone.** Tested in a desktop browser at 390 px with a pretend clock and simulated
   absences. Only the phone can confirm that closing the Home Screen app and opening it later shows "While you were
   away", and the native time pickers in "Done, at other times".
@@ -251,6 +275,14 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 9 rules (in `src/pages/calendar/month.ts`).**
+  - **"Before any data"** means before the first day ever opened or the day the earliest task was made, whichever is
+    earlier.
+  - **Changing month** selects today if it is in that month, otherwise the 1st.
+  - **Today on the Calendar** uses "so far" (only started blocks count, like the chip); the "4 blocks · 200 min" line
+    counts the whole day.
+  - **The remembered month and day** last while the app is open (not after it is closed).
 
 - **Step 8 rules (in `src/pages/review/flow.ts`).**
   - **"Log remaining tasks" and Review today** cover blocks with nothing logged whose planned end has passed (a block

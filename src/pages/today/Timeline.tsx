@@ -27,6 +27,7 @@ export function Timeline({
   nowMs,
   onBlockOpen,
   onBlockQuick,
+  canStart = true,
 }: {
   occurrences: readonly Occurrence[]
   range: TimeRange
@@ -42,6 +43,8 @@ export function Timeline({
   onBlockOpen: (occurrence: Occurrence) => void
   /** A tap on a block's round button. */
   onBlockQuick: (occurrence: Occurrence) => void
+  /** False on other days than today (no play buttons on blocks still to come). */
+  canStart?: boolean
 }) {
   const placed = placeBlocks(occurrences, range)
   const bars = actualBars(occurrences, nowMs, range, tolerances)
@@ -99,6 +102,7 @@ export function Timeline({
               nowMs={nowMs}
               onOpen={() => onBlockOpen(block.occurrence)}
               onQuick={() => onBlockQuick(block.occurrence)}
+              canStart={canStart}
             />
           </div>
         ))}
