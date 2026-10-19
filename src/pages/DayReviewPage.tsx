@@ -10,7 +10,7 @@ import { backTarget, isReviewDate } from './review/nav'
 import { PlannedVsActual } from './review/PlannedVsActual'
 import { ReviewSheet } from './review/ReviewSheet'
 import { reviewRows } from './review/rows'
-import { DayScoreCard, LoggedScoreCard } from './review/ScoreCards'
+import { DayScoreCard } from './review/ScoreCards'
 
 // The Day review (design/screens/DayReview.html), at #/day/:date/review: the two scores and the
 // day's blocks, planned against actual. "Log remaining tasks" arrives with Step 8.
@@ -102,7 +102,6 @@ function Review({ date }: { date: string }) {
 
       {ready && score.status !== 'empty' && (
         <>
-          {score.status !== 'complete' && <LoggedScoreCard score={score} />}
           <DayScoreCard score={score} />
           <PlannedVsActual rows={rows} />
 

@@ -3,6 +3,12 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 9 fix (Logged score removed, selected day outlined):** the Logged score is gone from the screens. On a day with
+  90 of 445 minutes logged it showed 100%, which read as a perfect day. It was Followed / (Followed + Missed), already
+  visible in the Day score bar. The Day review keeps one Day score card with a "Based on 160 of 200 planned minutes
+  logged" line; the Calendar card's last line is now "Logged · 280 of 370 min". `scoreDay` still works the number out.
+  The spec is updated. On the Calendar the selected day is no longer filled dark blue (it hid the ring around it); it
+  has a dark rounded outline around the whole day square instead. Branch `step-9-fix-calendar`.
 - **Step 9:** the Calendar tab and viewing any day. Tag: `step-9` (added after the merge).
   - **Calendar** (`CalendarPage.tsx`, from `Calendar.html`): month title, previous and next month, a Monday-first grid
     with today marked, a small ring on each day with a score (Followed blue and Missed apricot from the Step 7 Day
