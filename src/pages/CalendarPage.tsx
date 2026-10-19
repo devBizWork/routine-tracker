@@ -78,7 +78,7 @@ function DayCell({
       onClick={onSelect}
       className={`relative flex items-center justify-center rounded-14 border-0 p-0 text-14 ${
         outside ? 'text-muted' : 'text-ink'
-      } ${isToday || selected ? 'font-extrabold' : 'font-semibold'} ${selected ? 'bg-pill ring-2 ring-ink ring-inset' : 'bg-transparent'}`}
+      } ${isToday || selected ? 'font-extrabold' : 'font-semibold'} ${selected ? 'bg-card ring-2 ring-ink ring-inset' : 'bg-transparent'}`}
     >
       {ring && (
         <span className="absolute inset-0 flex items-center justify-center">
@@ -87,7 +87,7 @@ function DayCell({
       )}
       <span
         className={`relative flex size-7 items-center justify-center rounded-full ${
-          isToday ? (selected ? 'bg-card text-primary' : 'bg-pill text-primary') : ''
+          isToday ? 'bg-pill text-primary' : ''
         }`}
       >
         {number}

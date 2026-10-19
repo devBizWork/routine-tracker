@@ -8,7 +8,7 @@
   visible in the Day score bar. The Day review keeps one Day score card with a "Based on 160 of 200 planned minutes
   logged" line; the Calendar card's last line is now "Logged · 280 of 370 min". `scoreDay` still works the number out.
   The spec is updated. On the Calendar the selected day is no longer filled dark blue (it hid the ring around it); it
-  has a dark rounded outline around the whole day square and a light aqua fill instead. The Unknown part of every score ring (Calendar, week strip, Today chip) is now a darker grey (#A3B4BA, token `--color-unknown-ring`) so it shows; the Calendar legend matches. Branch `step-9-fix-calendar`.
+  has a dark rounded outline around the whole day square and a white fill instead. The Unknown part of every score ring (Calendar, week strip, Today chip) is now a darker grey (#A3B4BA, token `--color-unknown-ring`) so it shows; the Calendar legend matches. Branch `step-9-fix-calendar`.
 - **Step 9:** the Calendar tab and viewing any day. Tag: `step-9` (added after the merge).
   - **Calendar** (`CalendarPage.tsx`, from `Calendar.html`): month title, previous and next month, a Monday-first grid
     with today marked, a small ring on each day with a score (Followed blue and Missed apricot from the Step 7 Day
