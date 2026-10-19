@@ -76,9 +76,9 @@ function DayCell({
       aria-label={label}
       aria-pressed={selected}
       onClick={onSelect}
-      className={`relative flex items-center justify-center rounded-14 border-0 bg-transparent p-0 text-14 ${
+      className={`relative flex items-center justify-center rounded-14 border-0 p-0 text-14 ${
         outside ? 'text-muted' : 'text-ink'
-      } ${isToday || selected ? 'font-extrabold' : 'font-semibold'} ${selected ? 'ring-2 ring-ink ring-inset' : ''}`}
+      } ${isToday || selected ? 'font-extrabold' : 'font-semibold'} ${selected ? 'bg-pill ring-2 ring-ink ring-inset' : 'bg-transparent'}`}
     >
       {ring && (
         <span className="absolute inset-0 flex items-center justify-center">
@@ -87,7 +87,7 @@ function DayCell({
       )}
       <span
         className={`relative flex size-7 items-center justify-center rounded-full ${
-          isToday ? 'bg-pill text-primary' : ''
+          isToday ? (selected ? 'bg-card text-primary' : 'bg-pill text-primary') : ''
         }`}
       >
         {number}
@@ -304,7 +304,7 @@ export function CalendarPage() {
           Missed
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="box-border size-2.5 rounded-5 border border-unknown-line bg-line" />
+          <span className="size-2.5 rounded-5 bg-unknown-ring" />
           Unknown
         </span>
       </div>
