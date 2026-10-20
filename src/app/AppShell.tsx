@@ -1,4 +1,6 @@
-import { Outlet } from 'react-router'
+import { useEffect } from 'react'
+import { Outlet, useLocation } from 'react-router'
+import { forgetCalendar, isCalendarPath } from '../pages/calendar/month'
 import { StillDoingPrompt } from './StillDoingPrompt'
 import { useAwayTracker } from './away'
 import { TabBar } from './TabBar'
@@ -8,6 +10,12 @@ import { TabBar } from './TabBar'
 export function AppShell() {
   // Notes when the app was last in front, so Today can say what passed while it was away.
   useAwayTracker()
+
+  // Going to another tab means the Calendar opens on today next time.
+  const { pathname } = useLocation()
+  useEffect(() => {
+    if (!isCalendarPath(pathname)) forgetCalendar()
+  }, [pathname])
   return (
     <div className="flex h-dvh flex-col bg-ground text-ink">
       <main

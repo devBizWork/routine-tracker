@@ -11,6 +11,8 @@ import {
   monthOf,
   monthTitle,
   plannedLine,
+  forgetCalendar,
+  isCalendarPath,
   rememberCalendar,
   rememberedCalendar,
   shiftMonth,
@@ -171,5 +173,20 @@ describe('the Calendar remembers where it was', () => {
     expect(rememberedCalendar('2026-10-18')).toEqual({ month: OCT_2026, selected: '2026-10-18' })
     rememberCalendar({ year: 2026, month: 8 }, '2026-09-14')
     expect(rememberedCalendar('2026-10-18')).toEqual({ month: { year: 2026, month: 8 }, selected: '2026-09-14' })
+  })
+
+  it('leaving for another tab forgets it, so the Calendar opens on today again', () => {
+    rememberCalendar({ year: 2026, month: 8 }, '2026-09-14')
+    forgetCalendar()
+    expect(rememberedCalendar('2026-10-20')).toEqual({ month: OCT_2026, selected: '2026-10-20' })
+  })
+
+  it('a Day screen and a Day review count as part of the Calendar; the other tabs do not', () => {
+    expect(isCalendarPath('/calendar')).toBe(true)
+    expect(isCalendarPath('/day/2026-10-14')).toBe(true)
+    expect(isCalendarPath('/day/2026-10-14/review')).toBe(true)
+    expect(isCalendarPath('/')).toBe(false)
+    expect(isCalendarPath('/tasks')).toBe(false)
+    expect(isCalendarPath('/settings')).toBe(false)
   })
 })
