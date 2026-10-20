@@ -137,7 +137,9 @@ export function plannedLine(blocks: number, minutes: number): string {
   return `${blocks} ${blocks === 1 ? 'block' : 'blocks'} · ${minutes} min`
 }
 
-// ---- Remembering the Calendar while the app is open ----
+// ---- Remembering the Calendar while you are in it ----
+// The month and selected day are kept while you go from the Calendar into a Day screen or Day review
+// and back. Visiting another tab (Today, Tasks, Settings) forgets them, so the Calendar opens on today.
 
 let remembered: { month: MonthRef; selected: DateKey } | null = null
 
@@ -148,4 +150,17 @@ export function rememberedCalendar(today: DateKey): { month: MonthRef; selected:
 
 export function rememberCalendar(month: MonthRef, selected: DateKey) {
   remembered = { month, selected }
+}
+
+/** Forget the shown month and day: the next Calendar visit starts on today. */
+export function forgetCalendar() {
+  remembered = null
+}
+
+/**
+ * Is this address part of the Calendar (the tab itself, a Day screen or a Day review)? Leaving
+ * for any other address is "leaving the Calendar".
+ */
+export function isCalendarPath(pathname: string): boolean {
+  return pathname === '/calendar' || pathname.startsWith('/day/')
 }

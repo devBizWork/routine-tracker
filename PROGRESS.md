@@ -3,6 +3,9 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 9 fix 2 (Calendar opens on today):** going to another tab (Today, Tasks, Settings) and back to the Calendar now
+  shows the current month with today selected. The month and day are still kept while you go into a Day screen or
+  Day review and come back. Branch `step-9-fix-calendar-today`.
 - **Step 9 fix (Logged score removed, selected day outlined):** the Logged score is gone from the screens. On a day with
   90 of 445 minutes logged it showed 100%, which read as a perfect day. It was Followed / (Followed + Missed), already
   visible in the Day score bar. The Day review keeps one Day score card with a "Based on 160 of 200 planned minutes
@@ -288,7 +291,8 @@
   - **Changing month** selects today if it is in that month, otherwise the 1st.
   - **Today on the Calendar** uses "so far" (only started blocks count, like the chip); the "4 blocks · 200 min" line
     counts the whole day.
-  - **The remembered month and day** last while the app is open (not after it is closed).
+  - **The remembered month and day** last only while you stay in the Calendar (the tab, a Day screen or a Day review); any
+    other tab resets the Calendar to today (changed in Step 9 fix 2).
 
 - **Step 8 rules (in `src/pages/review/flow.ts`).**
   - **"Log remaining tasks" and Review today** cover blocks with nothing logged whose planned end has passed (a block
