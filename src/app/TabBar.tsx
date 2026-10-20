@@ -2,8 +2,8 @@ import { NavLink, useLocation } from 'react-router'
 import { TabIcon } from './TabIcon'
 import { TABS } from './tabs'
 
-/** A Day screen (#/day/2026-10-05) belongs to the Calendar tab. */
-const DAY_SCREEN = /^\/day\/[^/]+$/
+/** A Day screen (#/day/2026-10-05) and Trends belong to the Calendar tab. */
+const DAY_SCREEN = /^\/(day\/[^/]+|trends)$/
 
 // Layout copied from the <nav> in design/screens/Main.html. The bottom padding grows
 // with the iPhone home indicator (safe area) so the labels never sit underneath it.

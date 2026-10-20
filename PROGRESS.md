@@ -3,6 +3,20 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 10:** the Trends screen. Tag: `step-10` (added after the merge).
+  - **Trends** at `#/trends` (`TrendsPage.tsx`, from `Trends.html`), opened from the Calendar's Trends button, with a back
+    link to the Calendar (the Calendar tab stays highlighted).
+  - Weekly / Monthly toggle; previous and next period with the title ("Oct 14 – Oct 20" or "October 2026"); Next is
+    disabled on the current period. A week is the 7 days ending on a day (like the design); a month is a calendar month.
+  - **Three stat cards:** average Day score (followed), average Missed, and Coverage (share of planned minutes logged).
+    The Logged score card from the design is replaced by Missed, because the Logged score was removed in the Step 9 fix.
+  - **Scores by day:** one stacked bar per day (Followed blue under Missed apricot; the rest is Unknown), today marked
+    "so far" with a dashed outline. Monthly shows one bar per day with labels every five days.
+  - **Logging coverage** per day (numbers on the weekly view); **Most skipped**: the top 3 tasks with "Skipped 3 of 7
+    days" or "Skipped 1 · unknown 3".
+  - Hand-built SVG and HTML charts (no chart library), fitted to 375 px, each with a sentence summary for VoiceOver.
+  - Fewer than 2 days with something logged: "Log a few days to see trends here."
+  - 18 new tests (453 in all) in `src/pages/trends/trends.test.ts`.
 - **Step 9 fix 2 (Calendar opens on today):** going to another tab (Today, Tasks, Settings) and back to the Calendar now
   shows the current month with today selected. The month and day are still kept while you go into a Day screen or
   Day review and come back. Branch `step-9-fix-calendar-today`.
@@ -198,6 +212,9 @@
 
 ## Known bugs / not yet verified
 
+- **Step 10 not yet checked on the iPhone.** Tested in a desktop browser at 375 px with sample data (weekly, monthly, an
+  empty month, VoiceOver text). Only the phone can confirm the charts' look and VoiceOver reading them.
+
 - **Step 9 not yet checked on the iPhone.** Tested in a desktop browser at 390 and 375 px with sample data. Only the
   phone can confirm the feel of the month grid and the week strip under a finger.
 - **No "Real result" range on the Calendar card or the Day screen**, although Step 9 asked for it, because it was taken
@@ -284,6 +301,14 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 10 rules (in `src/pages/trends/trends.ts`).**
+  - **No Logged score on Trends** (it was removed in the Step 9 fix): the cards are Day score, Missed and Coverage, and
+    "Scores by day" is one stacked Followed + Missed bar per day.
+  - **Averages skip days with nothing logged** (those are Unknown, not 0%); Coverage still counts their planned minutes.
+    The "Log a few days" message also counts logged days.
+  - **Days before the first data and days after today** are blank; days never opened use their plan from the tasks.
+  - **Most skipped** counts only blocks that have started, ties broken by the most Unknown, then by name.
 
 - **Step 9 rules (in `src/pages/calendar/month.ts`).**
   - **"Before any data"** means before the first day ever opened or the day the earliest task was made, whichever is

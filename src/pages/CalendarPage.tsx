@@ -1,7 +1,6 @@
 import { format } from 'date-fns'
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
 import { listTasks, parseDateKey, peekRange, toDateKey, type DateKey } from '../data'
 import { useLiveQuery } from '../data/useLiveQuery'
@@ -203,7 +202,6 @@ export function CalendarPage() {
     rememberCalendar(next.month, next.selected)
   }
 
-  const [soon, setSoon] = useState(0)
 
   const weeks = monthGrid(month)
   const { from, to } = gridRange(month)
@@ -235,7 +233,7 @@ export function CalendarPage() {
         <button
           type="button"
           aria-label="Trends"
-          onClick={() => setSoon((n) => n + 1)}
+          onClick={() => navigate('/trends')}
           className="box-border flex h-11 items-center gap-1.5 rounded-22 border border-line bg-card pr-4 pl-3 text-13 font-bold text-primary"
         >
           <svg {...iconProps} width="18" height="18" strokeWidth="2">
@@ -319,7 +317,6 @@ export function CalendarPage() {
         />
       )}
 
-      <ComingSoonToast tap={soon} onDone={() => setSoon(0)} />
     </div>
   )
 }

@@ -158,9 +158,9 @@ export function forgetCalendar() {
 }
 
 /**
- * Is this address part of the Calendar (the tab itself, a Day screen or a Day review)? Leaving
+ * Is this address part of the Calendar (the tab itself, Trends, a Day screen or a Day review)? Leaving
  * for any other address is "leaving the Calendar".
  */
 export function isCalendarPath(pathname: string): boolean {
-  return pathname === '/calendar' || pathname.startsWith('/day/')
+  return pathname === '/calendar' || pathname === '/trends' || pathname.startsWith('/day/')
 }
