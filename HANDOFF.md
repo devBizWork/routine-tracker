@@ -28,7 +28,7 @@ blocks, log what happened, review two adherence scores (Logged score and Day sco
 stays on the phone (no server, no accounts, no analytics, no runtime network calls). It is
 installed from Safari to the Home Screen and must work **offline**.
 
-Plan: **16 steps**, one prompt per step from the user ("Step N of 16: ..."). Steps 1 to 8 are done (plus fixes); Step 9 is built and waiting for the user's merge.
+Plan: **16 steps**, one prompt per step from the user ("Step N of 16: ..."). Steps 1 to 9 are done (plus fixes); Step 10 is built and waiting for the user's merge.
 Build ONLY the step you are given. Anything shown in a design but not yet built shows a small
 "Coming soon" note (no dead taps).
 
@@ -125,7 +125,7 @@ on GitHub; they can be deleted.
 
 ## 5. Remaining work, in order
 
-**Very next step:** the user merges and tests Step 9 on their iPhone and reports (see the test log in 7c). Fix
+**Very next step:** the user merges and tests Step 10 on their iPhone and reports (see the test log in 7c). Fix
 anything they report in its own small branch/PR first (like `step-5-fix`), then they send the next step's
 prompt. Do not start any step the user has not sent.
 
@@ -186,7 +186,7 @@ npm run preview        # built app at http://localhost:4173/routine-tracker/ (se
 npm run icons          # redraws the placeholder icons in public/
 ```
 
-**Latest results (branch step-9):** type check clean, lint clean, **435 tests in 23 files
+**Latest results (branch step-10):** type check clean, lint clean, **453 tests in 24 files
 pass**, production build passes (about 1 s). CI (`checks`) is green on PR #6.
 
 Layout: `src/data/` (Dexie, API, rules, formatting), `src/app/` (shell, `BottomSheet`, `ActionSheet`,
@@ -207,6 +207,9 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 - **UI parts:** `BottomSheet` (full or `fit="content"`, swipe/backdrop/Escape, keyboard-safe),
   `ActionSheet` (iPhone-style menu), `ComingSoonToast`, `PageHeader`, `SwipeRow`, `TaskSheet` (new /
   edit / duplicate / schedule modes), `TimeBox/DateBox/SelectBox` (native pickers).
+- **Trends (Step 10):** `src/pages/trends/trends.ts` (pure: periods, `trendDays`, `summarize`, `mostSkipped`, VoiceOver text),
+  `trends/Charts.tsx`, `TrendsPage.tsx` (`#/trends`). **The Logged score is no longer shown anywhere** (Step 9 fix); `scoreDay`
+  still returns it.
 - **Calendar and Day (Step 9):** `src/pages/calendar/month.ts` (pure: `monthGrid`, `weekOf`, `dayInfo`, `firstDataDate`,
   remembered month), `CalendarPage.tsx`, `DayPage.tsx` (`#/day/:date`), `review/ScoreRing.tsx` (`ScoreRing`, `DayBar`),
   `dayPath` in `review/nav.ts`, data `peekRange`. Timeline/BlockView take `canStart`, LogSheet takes `allowTimer`.
@@ -236,7 +239,8 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
 | 2 | yes | Storage "Persistent" reported; Developer panel worked |
 | 3 and fixes | yes | keyboard bug and Duration label wrap were found here and fixed |
 | 4 | partly | red line under the arrow (fixed); swipe feel and Delete menu not reported |
-| 9 | pending | walkthrough is in the Step 9 PR |
+| 10 | pending | walkthrough is in the Step 10 PR |
+| 9 | yes | Logged score removed, selected-day outline, Unknown grey, Calendar opens on today: step-9-fix-* |
 | 8 | pending | walkthrough is in the Step 8 PR (merged) |
 | 7 | yes | 81% looked wrong (score rule changed), bar colours, Real result bracket removed: fixed in step-7-fix-* |
 | 6 | pending | walkthrough is in the Step 6 PR (merged) |
