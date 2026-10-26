@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useNavigate } from 'react-router'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
-import { clearAbsence, useAbsence } from '../app/away'
+import { clearAbsences, useAbsences } from '../app/away'
 import {
   defaultSettings,
   getDay,
@@ -11,6 +11,7 @@ import {
   isUnlogged,
   listTasks,
   peekDay,
+  peekRange,
   readSettings,
   toDateKey,
   type Occurrence,
@@ -40,7 +41,7 @@ import {
 } from './today/plan'
 import { TaskSheet, type SheetMode } from './tasks/TaskSheet'
 import { TodoSheet } from './tasks/TodoSheet'
-import { passedBlocks } from './review/flow'
+import { cardList, missedBlocks, oldestAwayDay } from './review/flow'
 import { ReviewSheet } from './review/ReviewSheet'
 import { AwayCard } from './today/AwayCard'
 
@@ -69,7 +70,10 @@ export function TodayPage() {
   const [logId, setLogId] = useState<string | null>(null)
   // The blocks "Review today" steps through when opened from the While you were away card.
   const [reviewIds, setReviewIds] = useState<string[] | null>(null)
-  const absence = useAbsence()
+  const absences = useAbsences()
+  // The last week of blocks, for the While you were away card (and Review from it).
+  const awayFrom = oldestAwayDay(date)
+  const recent = useLiveQuery(useCallback(() => peekRange(awayFrom, date), [awayFrom, date]))
   // A short message at the bottom (a problem starting a timer, or opening a block). tap 0 = hidden.
   const [notice, setNotice] = useState({ tap: 0, message: '' })
   const hideNotice = useCallback(() => setNotice((n) => ({ ...n, tap: 0 })), [])
@@ -158,12 +162,16 @@ export function TodayPage() {
   const score = scoreDay(blocks, { startedBy: minutesOfDay(now) })
   const openReview = () => navigate(reviewPath(date), { state: reviewState('today') })
 
-  // What passed while the app was closed or in the background (shown once per absence).
-  const passed = absence && showTimeline ? passedBlocks(blocks, date, absence) : []
-  const logPassed = () => {
-    setReviewIds(passed.filter((p) => p.status === 'unknown').map((p) => p.occurrence.id))
-    clearAbsence()
-  }
+  // What passed while the app was closed or in the background and is still not logged. It stays
+  // until dismissed, logged, or more than a week old (then the saved absences are cleared).
+  const recentBlocks = recent?.occurrences ?? []
+  const missed = absences && absences.length > 0 ? missedBlocks(recentBlocks, absences, date, now.getTime()) : []
+  const awayList = cardList(missed)
+  const nothingLeft = recent !== undefined && absences !== undefined && absences.length > 0 && missed.length === 0
+  useEffect(() => {
+    if (nothingLeft) void clearAbsences()
+  }, [nothingLeft])
+  const logMissed = () => setReviewIds(missed.map((o) => o.id))
 
   const repeating = new Set(tasks.filter((t) => t.repeat.kind !== 'once').map((t) => t.id))
   const card = nowNext(spans, secondsOfDay(now))
@@ -179,20 +187,23 @@ export function TodayPage() {
         />
       )}
 
+      {ready && absences && absences.length > 0 && missed.length > 0 && (
+        <AwayCard
+          absences={absences}
+          shown={awayList.shown}
+          more={awayList.more}
+          today={date}
+          timeFormat={timeFormat}
+          onLogNow={logMissed}
+          onDismiss={() => void clearAbsences()}
+        />
+      )}
+
       {ready && tasks.length > 0 && blocks.length === 0 && <NothingToday onAddBlock={() => setSheet({ kind: 'new' })} />}
 
       {showTimeline && (
         <>
           <NowNextCard state={card} timeFormat={timeFormat} onReviewDay={openReview} />
-          {absence && passed.length > 0 && (
-            <AwayCard
-              absence={absence}
-              blocks={passed}
-              timeFormat={timeFormat}
-              onLogNow={logPassed}
-              onDismiss={clearAbsence}
-            />
-          )}
           <div
             ref={scroller}
             aria-label="Timeline"
@@ -241,7 +252,7 @@ export function TodayPage() {
         <ReviewSheet
           date={date}
           ids={reviewIds}
-          occurrences={blocks}
+          occurrences={recentBlocks}
           repeating={repeating}
           timeFormat={timeFormat}
           onDone={openReview}
