@@ -15,6 +15,7 @@ import {
   isDateKey,
   occursOn,
   overlapMessage,
+  readSettings,
   taskLogCount,
   updateTask,
   updateTaskForDay,
@@ -52,6 +53,9 @@ import {
 import { deleteCopy, type DeleteCopy } from './deleteCopy'
 import { DateBox, SelectBox, TimeBox } from './fields'
 import { ScopeChoice } from './ScopeChoice'
+import { ChimeSheet } from '../settings/ChimeSheet'
+import { APP_DEFAULT, taskChimeChoices, taskChimeLabel } from '../settings/chimeChoices'
+import { useLiveQuery } from '../../data/useLiveQuery'
 
 const REPEAT_CHOICES: { kind: RepeatKind; label: string }[] = [
   { kind: 'once', label: 'Once' },
@@ -164,6 +168,8 @@ export function TaskSheet({
   const [pending, setPending] = useState<'close' | 'duplicate' | null>(null)
   const [deleting, setDeleting] = useState<DeleteCopy | null>(null)
   const [saving, setSaving] = useState(false)
+  const [pickingChime, setPickingChime] = useState(false)
+  const appChime = useLiveQuery(readSettings)?.chimeId ?? 'bamboo'
   const [saveError, setSaveError] = useState<string | null>(null)
 
   const update = (change: (d: Draft) => Draft) => setDraft(change)
@@ -521,7 +527,11 @@ export function TaskSheet({
         </Card>
 
         <Card>
-          <div className="flex min-h-[58px] items-center gap-2.5 py-1 pr-3 pl-4">
+          <button
+            type="button"
+            onClick={() => setPickingChime(true)}
+            className="flex min-h-[58px] w-full items-center gap-2.5 rounded-20 border-0 bg-transparent py-1 pr-3 pl-4 text-left text-ink"
+          >
             <svg
               width="18"
               height="18"
@@ -539,12 +549,21 @@ export function TaskSheet({
               <circle cx="16.5" cy="16" r="2.5" />
             </svg>
             <span className="flex-1 text-15 font-semibold whitespace-nowrap">Chime for this task</span>
-            <span className="flex shrink-0 flex-col items-end gap-0.5 py-1">
-              <span className="text-14 font-medium text-muted">App default</span>
-              <span className="rounded-9 bg-ground px-2 py-0.5 text-10-5 font-bold text-muted">Coming soon</span>
-            </span>
-          </div>
+            <span className="min-w-0 truncate text-14 font-medium text-muted">{taskChimeLabel(draft.soundOverride, appChime)}</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="shrink-0 text-muted">
+              <path d="M9.5 6l6 6-6 6" />
+            </svg>
+          </button>
         </Card>
+        {pickingChime && (
+          <ChimeSheet
+            title="Chime for this task"
+            choices={taskChimeChoices(appChime)}
+            value={draft.soundOverride ?? APP_DEFAULT}
+            onChange={(v) => update((d) => ({ ...d, soundOverride: v === APP_DEFAULT ? null : v }))}
+            onClosed={() => setPickingChime(false)}
+          />
+        )}
 
         <Card className="flex flex-col gap-1.5 p-4">
           <label htmlFor={`${titleId}-notes`}>
@@ -567,7 +586,7 @@ export function TaskSheet({
             dayDisabledText={runsToday ? undefined : `Not scheduled on ${formatDay(today, today)}.`}
             note={
               appliedScope === 'day' && changesMoreThanOneDay(editing, draft)
-                ? 'The repeat and notes only change with “This and future days”.'
+                ? 'The repeat, notes and chime only change with “This and future days”.'
                 : null
             }
           />

@@ -4,24 +4,8 @@ import type { Occurrence } from '../../data'
 import { headlinePercent, type DayScore } from '../../scoring'
 import { reviewPath, reviewState } from '../review/nav'
 import { ScoreRing } from '../review/ScoreRing'
+import { SoundButton, type SoundButtonState } from './SoundControls'
 
-const soundIcon = (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.9"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M11 5 6.5 9H3.5v6h3l4.5 4z" />
-    <path d="M15.5 9a4.5 4.5 0 0 1 0 6" />
-    <path d="M18.5 6a8.5 8.5 0 0 1 0 12" />
-  </svg>
-)
 
 /**
  * The Day score chip (design/screens/Main.html): a small ring and the score so far. The ring shows
@@ -53,20 +37,21 @@ function DayScoreChip({ score, date }: { score: DayScore<Occurrence>; date: stri
 
 /**
  * The top of the Today screen (design/screens/Main.html, FirstRun.html): the full date, the
- * title, the Day score chip and the sound button. The sound button is wired in Step 11 and says
- * "Coming soon" when tapped.
+ * title, the Day score chip and the sound button (on, muted, or waiting for a tap).
  */
 export function TodayHeader({
   now,
   date,
   score,
-  onComingSoon,
+  sound,
+  onSoundTap,
 }: {
   now: Date
   /** The day being shown, "YYYY-MM-DD", which the Day score chip opens the review of. */
   date: string
   score: DayScore<Occurrence>
-  onComingSoon: () => void
+  sound: SoundButtonState
+  onSoundTap: () => void
 }) {
   return (
     <header
@@ -81,15 +66,7 @@ export function TodayHeader({
       <div className="flex shrink-0 items-center gap-2">
         <DayScoreChip score={score} date={date} />
 
-        <button
-          type="button"
-          aria-label="Mute sounds"
-          aria-pressed="false"
-          onClick={onComingSoon}
-          className="box-border flex size-11 items-center justify-center rounded-22 border border-line bg-card p-0 text-primary"
-        >
-          {soundIcon}
-        </button>
+        <SoundButton state={sound} onTap={onSoundTap} />
       </div>
     </header>
   )

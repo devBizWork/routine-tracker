@@ -2,6 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useNavigate } from 'react-router'
 import { ComingSoonToast } from '../app/ComingSoonToast'
 import { useNow } from '../app/useNow'
+import { unlockAudio, useAudioState } from '../sound/audio'
+import { useWakeLock } from '../sound/useWakeLock'
 import { clearAbsences, useAbsences } from '../app/away'
 import {
   defaultSettings,
@@ -14,6 +16,7 @@ import {
   peekRange,
   readSettings,
   toDateKey,
+  updateSettings,
   type Occurrence,
   type Task,
 } from '../data'
@@ -27,6 +30,7 @@ import { FirstRun, NothingToday } from './today/EmptyStates'
 import { NowNextCard } from './today/NowNextCard'
 import { Timeline } from './today/Timeline'
 import { TodayHeader } from './today/TodayHeader'
+import { MutedToast, SoundBanner, type SoundButtonState } from './today/SoundControls'
 import {
   blockLook,
   minutesOfDay,
@@ -80,9 +84,11 @@ export function TodayPage() {
   const showNotice = (message: string) => setNotice((n) => ({ tap: n.tap + 1, message }))
   const starter = useStartTimer(showNotice)
   const [todoOpen, setTodoOpen] = useState(false)
-  const [soon, setSoon] = useState(0)
-  const comingSoon = () => setSoon((n) => n + 1)
-  const hideSoon = useCallback(() => setSoon(0), [])
+
+  // Sounds: the header button, the "Tap to turn on sounds" banner and the muted toast.
+  const audio = useAudioState()
+  const [mutedToast, setMutedToast] = useState(0)
+  const hideMutedToast = useCallback(() => setMutedToast(0), [])
 
   const scroller = useRef<HTMLDivElement>(null)
   const needsScroll = useRef(true)
@@ -173,12 +179,34 @@ export function TodayPage() {
   }, [nothingLeft])
   const logMissed = () => setReviewIds(missed.map((o) => o.id))
 
+  const soundsOn = settings?.soundsOn ?? true
+  const soundState: SoundButtonState = !soundsOn ? 'muted' : audio === 'locked' ? 'needs-tap' : 'on'
+  // Keep screen on (Settings): hold the screen awake while Today is showing.
+  useWakeLock(settings?.keepScreenOn === true)
+
+  const turnSoundsOn = async () => {
+    setMutedToast(0)
+    await unlockAudio()
+    await updateSettings({ soundsOn: true })
+  }
+  // Every tap on the button also unlocks audio, which iPhone needs before any sound plays.
+  const onSoundTap = async () => {
+    if (soundState === 'muted') return turnSoundsOn()
+    await unlockAudio()
+    if (soundState === 'on') {
+      await updateSettings({ soundsOn: false })
+      setMutedToast((n) => n + 1)
+    }
+  }
+
   const repeating = new Set(tasks.filter((t) => t.repeat.kind !== 'once').map((t) => t.id))
   const card = nowNext(spans, secondsOfDay(now))
 
   return (
     <div className="flex h-full flex-col">
-      <TodayHeader now={now} date={date} score={score} onComingSoon={comingSoon} />
+      <TodayHeader now={now} date={date} score={score} sound={soundState} onSoundTap={() => void onSoundTap()} />
+
+      {soundState === 'needs-tap' && <SoundBanner onTap={() => void unlockAudio()} />}
 
       {ready && tasks.length === 0 && (
         <FirstRun
@@ -270,7 +298,7 @@ export function TodayPage() {
         />
       )}
 
-      <ComingSoonToast tap={soon} onDone={hideSoon} />
+      <MutedToast tap={mutedToast} onUndo={() => void turnSoundsOn()} onDone={hideMutedToast} />
       <ComingSoonToast tap={notice.tap} onDone={hideNotice} message={notice.message} />
     </div>
   )
