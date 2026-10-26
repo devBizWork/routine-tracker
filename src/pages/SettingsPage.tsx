@@ -3,6 +3,7 @@ import { PageHeader } from '../app/PageHeader'
 import { APP_VERSION } from '../app/version'
 import { DEVELOPER_VISIBLE_KEY, getMeta, setMeta } from '../data'
 import { DeveloperSection } from './settings/DeveloperSection'
+import { SoundsSection } from './settings/SoundsSection'
 
 const TAPS_NEEDED = 5
 /** Taps count only if each one follows the last within this time. */
@@ -64,6 +65,7 @@ export function SettingsPage() {
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader title="Settings" />
+      <SoundsSection />
       {developerVisible && <DeveloperSection />}
       <div className="mt-auto flex flex-col items-center pt-6 pb-4">
         <button

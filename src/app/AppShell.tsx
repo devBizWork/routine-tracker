@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router'
 import { forgetCalendar, isCalendarPath } from '../pages/calendar/month'
 import { StillDoingPrompt } from './StillDoingPrompt'
 import { useAwayTracker } from './away'
+import { useSoundScheduler } from '../sound/useSoundScheduler'
 import { TabBar } from './TabBar'
 
 // Full-height column: the current screen scrolls on its own, the tab bar stays put.
@@ -10,6 +11,8 @@ import { TabBar } from './TabBar'
 export function AppShell() {
   // Notes when the app was last in front, so Today can say what passed while it was away.
   useAwayTracker()
+  // Plays the task-change chime, the 5-minute warning and the end sound while the app is visible.
+  useSoundScheduler()
 
   // Going to another tab means the Calendar opens on today next time.
   const { pathname } = useLocation()

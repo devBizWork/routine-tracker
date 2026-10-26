@@ -9,6 +9,7 @@ import {
   type DateKey,
   type NewTask,
   type RepeatKind,
+  type SoundOverride,
   type Task,
   type TimeOfDay,
 } from '../../data'
@@ -48,6 +49,8 @@ export interface Draft {
   customDays: number[]
   color: CategoryId
   notes: string
+  /** The task's own chime: null = the app's chime, 'silent', or a chime id. */
+  soundOverride: SoundOverride
 }
 
 export function initialDraft(today: DateKey): Draft {
@@ -62,6 +65,7 @@ export function initialDraft(today: DateKey): Draft {
     customDays: [],
     color: DEFAULT_CATEGORY,
     notes: '',
+    soundOverride: null,
   }
 }
 
@@ -175,13 +179,14 @@ export function toNewTask(d: Draft): NewTask {
     repeat: { kind: d.kind, days: d.kind === 'custom' ? [...d.customDays].sort((a, b) => a - b) : [] },
     date: d.kind === 'once' && isDateKey(d.date) ? d.date : null,
     notes: d.notes,
+    soundOverride: d.soundOverride,
   }
 }
 
 /** Has anything been typed or chosen? (Switching Duration/End on its own is not a change.) */
 export function isDirty(d: Draft, initial: Draft): boolean {
   const content = (x: Draft) =>
-    JSON.stringify([x.title.trim(), x.start, x.duration, x.endRaw, x.kind, x.date, x.customDays, x.color, x.notes.trim()])
+    JSON.stringify([x.title.trim(), x.start, x.duration, x.endRaw, x.kind, x.date, x.customDays, x.color, x.notes.trim(), x.soundOverride])
   return content(d) !== content(initial)
 }
 
@@ -200,6 +205,7 @@ export function draftFromTask(task: Task, today: DateKey): Draft {
     customDays: task.repeat.kind === 'custom' ? [...task.repeat.days] : [],
     color: task.color,
     notes: task.notes,
+    soundOverride: task.soundOverride,
   }
 }
 
@@ -260,11 +266,11 @@ export function dayOnlyPatch(
   }
 }
 
-/** True if the form changes something a single day cannot hold: the repeat, the date or the notes. */
+/** True if the form changes something a single day cannot hold: the repeat, the date, the notes or the chime. */
 export function changesMoreThanOneDay(task: Task, d: Draft): boolean {
   const days = (days: number[]) => [...days].sort((a, b) => a - b).join()
   const sameRepeat =
     d.kind === task.repeat.kind && (d.kind !== 'custom' || days(d.customDays) === days(task.repeat.days))
   const sameDate = d.kind !== 'once' || d.date === (task.date ?? d.date)
-  return !sameRepeat || !sameDate || d.notes.trim() !== task.notes.trim()
+  return !sameRepeat || !sameDate || d.notes.trim() !== task.notes.trim() || d.soundOverride !== task.soundOverride
 }

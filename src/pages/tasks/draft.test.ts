@@ -224,7 +224,18 @@ describe('what gets saved', () => {
       repeat: { kind: 'once', days: [] },
       date: TODAY,
       notes: 'Bring forms',
+      soundOverride: null,
     })
+  })
+
+  it('saves the task’s own chime, or Silent', () => {
+    expect(toNewTask(ready({ soundOverride: 'marimba' })).soundOverride).toBe('marimba')
+    expect(toNewTask(ready({ soundOverride: 'silent' })).soundOverride).toBe('silent')
+  })
+
+  it('a changed chime counts as a change, and needs This and future days', () => {
+    const start = ready()
+    expect(isDirty({ ...start, soundOverride: 'glass' }, start)).toBe(true)
   })
 
   it('a repeating draft has no date, and custom keeps its days in order', () => {

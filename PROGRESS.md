@@ -3,6 +3,26 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 11:** task-change sounds and everything that controls them. Tag: `step-11` (added after the merge).
+  - **Four chimes** (Bamboo default, Bell, Marimba, Glass), made on the phone with the Web Audio API (`src/sound/chimes.ts`):
+    no audio files, so they work offline. The 5-minute warning is a single quiet note of the chime; the end sound plays
+    the chime going down.
+  - **Audio unlock** (`src/sound/audio.ts`): the first tap on any sound control (header button, "Tap to turn on sounds",
+    Test sound, a sound switch, the chime list) starts audio.
+  - **Header sound button** with three states: on, muted (apricot, "Sounds muted" toast with Undo) and needs a tap (grey
+    with an aqua dot). **"Tap to turn on sounds"** banner on Today while sounds are on but audio is locked.
+  - **Scheduler** (`src/sound/useSoundScheduler.ts`, rules in `schedule.ts`): while the app is visible it plays the chime at
+    each block start, the 5-minute warning before it and the end sound, each only when switched on, never in quiet
+    hours (which may cross midnight), never twice for one moment (a block change beats an end at the same minute).
+    Moments missed while the app was hidden are not played (the While you were away card covers them).
+  - **Settings > Sounds** as designed: Task-change chime switch, Chime picker sheet (tap to hear, check on the chosen
+    one), Test sound Play, 5-minute warning, End-of-task sound, Quiet hours with From and Until, Keep screen on, and the
+    note about the Silent switch.
+  - **Keep screen on** (`useWakeLock`): holds a screen wake lock while Today is visible and asks again on return; the
+    switch is disabled with "Not supported on this device" where the phone cannot do it.
+  - **Task sheet chime row:** App default, any chime, or Silent (saved on the task; the scheduler follows it). It only
+    changes with "This and future days".
+  - 23 new tests (477 in all), mostly `src/sound/schedule.test.ts`.
 - **Step 8 fix (While you were away stays until dismissed):** the card used to vanish when the app was closed in the
   background (it was only kept in memory) and at midnight (it only looked at today). The absences are now saved in the
   database (meta key `awayAbsences`) and new absences join them. The card lists only blocks that passed while away,
@@ -224,6 +244,12 @@
 
 ## Known bugs / not yet verified
 
+- **Step 11 not yet heard on the iPhone.** In a desktop browser: all three button states, the banner, the toast with
+  Undo, every Settings switch, the chime picker, the task chime row, and the scheduler starting the 3-note chime at
+  9:00 with a pretend clock (and nothing late after a jump). Only the phone can confirm: the chimes' sound and volume,
+  that the first tap unlocks audio, the Silent switch, audio locking again after the app was in the background, and
+  Keep screen on (iOS 16.4 or later).
+
 - **Step 10 not yet checked on the iPhone.** Tested in a desktop browser at 375 px with sample data (weekly, monthly, an
   empty month, VoiceOver text). Only the phone can confirm the charts' look and VoiceOver reading them.
 
@@ -313,6 +339,13 @@
   approved stack. Ask before adding them.
 
 ## Decisions made
+
+- **Step 11 rules (in `src/sound/`).**
+  - **One main switch:** Settings "Task-change chime" and the header mute button are the same setting (`soundsOn`); the
+    5-minute warning and the end sound are extras that play only while it is on.
+  - **Chimes are synthesized** (Web Audio oscillators), not audio files: nothing to precache, works offline.
+  - **Same minute:** a block change beats an end, which beats a warning; only one sound per minute.
+  - **The scheduler runs on every tab** while the app is visible; Keep screen on only holds the screen while Today shows.
 
 - **Step 10 rules (in `src/pages/trends/trends.ts`).**
   - **No Logged score on Trends** (it was removed in the Step 9 fix): the cards are Day score, Missed and Coverage, and
