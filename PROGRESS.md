@@ -3,6 +3,13 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 8 fix (While you were away stays until dismissed):** the card used to vanish when the app was closed in the
+  background (it was only kept in memory) and at midnight (it only looked at today). The absences are now saved in the
+  database (meta key `awayAbsences`) and new absences join them. The card lists only blocks that passed while away,
+  are over and still have nothing logged, across the last 7 days; logging one anywhere takes it off. It shows at most
+  the 10 most recent with "+ N more", and "Log these N now" reviews all of them (Review handles blocks from several
+  days). It goes away only on Dismiss, when everything on it is logged, or when everything on it is more than a week
+  old. Branch `step-8-fix-away-card`.
 - **Step 10 fix (Most followed, trend arrow):** a **Most followed** section above Most skipped (top 3 tasks by days
   followed; a day counts when any of the planned time was kept, ties go to the task that kept more of its plan), and an
   **arrow with a percentage** at the top right of the Day score card: this period's average Day score against the period
@@ -331,7 +338,8 @@
     answer can be changed. Not sure saves nothing.
   - **"Done"** on All caught up goes to the Day review, from Today too.
   - **Away** means at least one minute without the app in front. A block "passed" when it started or ended during that
-    time. A second absence before the card is dealt with is joined onto the first. Dismiss or "Log these N now" ends it.
+    time. Absences are saved and joined until the card is dealt with. (Changed in the Step 8 fix: the card stays until
+    Dismiss, all logged, or all older than 7 days; at most 10 listed.)
 
 - **Step 7 rules (in `src/scoring/`).**
   - **Task score** (changed in Step 7 fix 2, replacing timing credit T and duration credit D): the share of the planned

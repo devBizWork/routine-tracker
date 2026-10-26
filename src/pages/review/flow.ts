@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import {
+  addDays,
   doneAsPlannedPatch,
   formatSpan,
   formatTime,
@@ -109,50 +110,74 @@ export interface Absence {
   to: number
 }
 
-export type PassedStatus = 'done' | 'skipped' | 'unknown' | 'now' | 'running'
-
-export interface PassedBlock {
-  occurrence: Occurrence
-  status: PassedStatus
-}
+/** Missed blocks older than this many days (today included) drop off the card. */
+export const AWAY_KEEP_DAYS = 7
+/** The card lists at most this many blocks (the most recent); the rest are counted as "+ N more". */
+export const AWAY_SHOW_MAX = 10
 
 function momentOn(date: string, minutes: number): number {
   const day = parseDateKey(date)
   return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, minutes).getTime()
 }
 
-/**
- * The blocks of `date` that changed (started or ended) while the app was away, in time order, with
- * how each stands now: done, skipped, Unknown (over, nothing logged), Now (going on), or a timer
- * running.
- */
-export function passedBlocks(occurrences: readonly Occurrence[], date: string, absence: Absence): PassedBlock[] {
-  const inside = (moment: number) => moment > absence.from && moment <= absence.to
-  return occurrences
-    .filter((o) => {
-      const start = momentOn(date, timeToMinutes(o.plannedStart))
-      const end = momentOn(date, plannedEndMinutes(o))
-      return o.plannedMinutes > 0 && (inside(start) || inside(end))
-    })
-    .sort((a, b) => timeToMinutes(a.plannedStart) - timeToMinutes(b.plannedStart))
-    .map((o) => {
-      const start = momentOn(date, timeToMinutes(o.plannedStart))
-      const end = momentOn(date, plannedEndMinutes(o))
-      let status: PassedStatus
-      if (o.timerStartedAt !== null) status = 'running'
-      else if (o.status === 'done') status = 'done'
-      else if (o.status === 'skipped') status = 'skipped'
-      else if (start <= absence.to && absence.to < end) status = 'now'
-      else status = 'unknown'
-      return { occurrence: o, status }
-    })
+/** The oldest day the card still covers. */
+export function oldestAwayDay(today: string): string {
+  return addDays(today, -(AWAY_KEEP_DAYS - 1))
 }
 
-/** "10:20 am – 12:10 pm", or "Mon 9:40 pm – 7:05 am" when the absence began on another day. */
-export function absenceLabel(absence: Absence, timeFormat: TimeFormat): string {
-  const from = timeOfMoment(absence.from)
-  const to = timeOfMoment(absence.to)
-  const sameDay = format(absence.from, 'yyyy-MM-dd') === format(absence.to, 'yyyy-MM-dd')
+/** Adds an absence to the list, joining it with any it overlaps or touches. Sorted by start. */
+export function mergeAbsence(list: readonly Absence[], next: Absence): Absence[] {
+  const all = [...list, next].sort((a, b) => a.from - b.from)
+  const merged: Absence[] = []
+  for (const a of all) {
+    const last = merged[merged.length - 1]
+    if (last && a.from <= last.to) last.to = Math.max(last.to, a.to)
+    else merged.push({ ...a })
+  }
+  return merged
+}
+
+/** Drops absences that ended before the oldest day the card still covers. */
+export function keepRecentAbsences(list: readonly Absence[], nowMs: number): Absence[] {
+  const oldest = parseDateKey(oldestAwayDay(format(nowMs, 'yyyy-MM-dd'))).getTime()
+  return list.filter((a) => a.to >= oldest)
+}
+
+/**
+ * The blocks the card is about, in time order: they started or ended while the app was away, are
+ * over, still have nothing logged, and are from the last week. Logging one anywhere takes it off.
+ */
+export function missedBlocks(
+  occurrences: readonly Occurrence[],
+  absences: readonly Absence[],
+  today: string,
+  nowMs: number,
+): Occurrence[] {
+  const oldest = oldestAwayDay(today)
+  return occurrences
+    .filter((o) => {
+      if (o.date < oldest || o.date > today || o.plannedMinutes <= 0 || !needsLog(o)) return false
+      const start = momentOn(o.date, timeToMinutes(o.plannedStart))
+      const end = momentOn(o.date, plannedEndMinutes(o))
+      if (end > nowMs) return false
+      return absences.some((a) => (start > a.from && start <= a.to) || (end > a.from && end <= a.to))
+    })
+    .sort((a, b) => a.date.localeCompare(b.date) || timeToMinutes(a.plannedStart) - timeToMinutes(b.plannedStart))
+}
+
+/** What the card lists: the most recent AWAY_SHOW_MAX blocks (still in time order) and how many more. */
+export function cardList(missed: readonly Occurrence[]): { shown: Occurrence[]; more: number } {
+  const shown = missed.slice(-AWAY_SHOW_MAX)
+  return { shown, more: missed.length - shown.length }
+}
+
+/** "10:20 am – 12:10 pm", or "Mon 9:40 pm – 7:05 am" when the absences began on another day. */
+export function absenceLabel(absences: readonly Absence[], timeFormat: TimeFormat): string {
+  const fromMs = Math.min(...absences.map((a) => a.from))
+  const toMs = Math.max(...absences.map((a) => a.to))
+  const from = timeOfMoment(fromMs)
+  const to = timeOfMoment(toMs)
+  const sameDay = format(fromMs, 'yyyy-MM-dd') === format(toMs, 'yyyy-MM-dd')
   if (sameDay) return formatSpan(from, to, timeFormat)
-  return `${format(absence.from, 'EEE')} ${formatTime(from, timeFormat)} – ${formatTime(to, timeFormat)}`
+  return `${format(fromMs, 'EEE')} ${formatTime(from, timeFormat)} – ${formatTime(to, timeFormat)}`
 }

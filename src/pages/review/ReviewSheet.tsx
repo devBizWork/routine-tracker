@@ -125,7 +125,13 @@ export function ReviewSheet({
     setIndex(index - 1)
   }
 
-  const heading = date === today ? 'Review today' : `Review ${format(parseDateKey(date), 'EEE, MMM d')}`
+  // Blocks from other days than `date` (the While you were away list can reach back a week).
+  const otherDays = steps.some((o) => o.date !== date)
+  const heading = otherDays
+    ? 'Review missed blocks'
+    : date === today
+      ? 'Review today'
+      : `Review ${format(parseDateKey(date), 'EEE, MMM d')}`
   const count = ids.length
   const subtitle = `${count === 1 ? '1 block wasn’t' : `${count} blocks weren’t`} logged. One tap each.`
 
@@ -206,6 +212,7 @@ export function ReviewSheet({
               <div className="flex flex-col gap-1">
                 <span className="text-22 font-extrabold tracking-[-0.01em] break-words">{block.title}</span>
                 <span className="text-14 font-semibold">
+                  {block.date !== date && `${format(parseDateKey(block.date), 'EEE, MMM d')} · `}
                   Planned {plannedSpan(block, timeFormat)} · {formatDuration(block.plannedMinutes)}
                 </span>
               </div>
@@ -351,7 +358,9 @@ export function ReviewSheet({
           <CaughtUp
             reviewed={steps.length}
             percent={headlinePercent(
-              scoreDay(occurrences, { startedBy: startedByFor(date, today, now.getHours() * 60 + now.getMinutes()) }),
+              scoreDay(
+                occurrences.filter((o) => o.date === date),
+                { startedBy: startedByFor(date, today, now.getHours() * 60 + now.getMinutes()) }),
             )}
             onDone={onDone}
           />

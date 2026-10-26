@@ -215,7 +215,7 @@ security policy, tests that read tokens and design files), `.github/workflows/` 
   `dayPath` in `review/nav.ts`, data `peekRange`. Timeline/BlockView take `canStart`, LogSheet takes `allowTimer`.
 - **Review and catch-up (Step 8):** `src/pages/review/flow.ts` (pure: `blocksToReview`, `answerPatch`, `passedBlocks`),
   `ReviewSheet.tsx` (open with a fixed list of occurrence ids), `src/app/away.ts` (`useAwayTracker` in AppShell,
-  `useAbsence`/`clearAbsence`; meta key `lastSeenAt`), `today/AwayCard.tsx`. `scoring/display.ts` `headlinePercent` is the one
+  `useAbsences`/`clearAbsences`; meta keys `lastSeenAt` and `awayAbsences`; card rules `missedBlocks`, `cardList` in flow.ts), `today/AwayCard.tsx`. `scoring/display.ts` `headlinePercent` is the one
   rule for the headline Day number. For browser checks that must not touch the user's preview data, run the
   `routine-tracker-check` config (port 4174, its own database) from the git-ignored `.claude/launch.json`.
 - **Scoring (Step 7):** `src/scoring/` (pure: `scoreTask` = minutes of the actual time inside the planned time / planned minutes, `scoreDay`,

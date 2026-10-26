@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { mergeAbsence } from '../../app/away'
 import type { Occurrence } from '../../data'
 import {
   absenceLabel,
@@ -8,8 +7,12 @@ import {
   blocksToReview,
   logSnapshot,
   needsLog,
+  cardList,
+  keepRecentAbsences,
+  mergeAbsence,
+  missedBlocks,
+  oldestAwayDay,
   otherTimesProblem,
-  passedBlocks,
   plannedSpan,
 } from './flow'
 
@@ -127,53 +130,62 @@ describe('Done, at other times', () => {
 })
 
 describe('While you were away', () => {
-  // design/screens/WelcomeBack.html: away 10:20 am to 12:10 pm.
+  // design/screens/WelcomeBack.html: away 10:20 am to 12:10 pm on Oct 6.
   const day = [
-    block('Deep work', '09:00', 90, { status: 'done', actualStart: '09:00', actualEnd: '10:30' }), // ended 10:30
-    block('Client check-in call', '10:30', 30),
-    block('Admin & invoices', '11:15', 45),
-    block('Lunch walk', '12:00', 30),
-    block('Project work', '13:00', 90),
-    block('Morning workout', '06:30', 60),
+    block('Deep work', '09:00', 90, { status: 'done', actualStart: '09:00', actualEnd: '10:30' }), // done: not listed
+    block('Client check-in call', '10:30', 30), // missed
+    block('Admin & invoices', '11:15', 45), // missed
+    block('Lunch walk', '12:00', 30), // still going on at 12:10: not listed yet
+    block('Project work', '13:00', 90), // later
+    block('Morning workout', '06:30', 60), // before the absence
   ]
-  const away = { from: at(10, 20), to: at(12, 10) }
+  const away = [{ from: at(10, 20), to: at(12, 10) }]
 
-  it('lists the blocks that started or ended while away, with how each stands', () => {
-    expect(passedBlocks(day, DATE, away).map((p) => [p.occurrence.title, p.status])).toEqual([
-      ['Deep work', 'done'],
-      ['Client check-in call', 'unknown'],
-      ['Admin & invoices', 'unknown'],
-      ['Lunch walk', 'now'],
-    ])
+  it('lists only blocks that passed while away, are over, and are not logged', () => {
+    expect(missedBlocks(day, away, DATE, at(12, 10)).map((o) => o.title)).toEqual(['Client check-in call', 'Admin & invoices'])
   })
 
-  it('leaves out blocks that did not change while away', () => {
-    const titles = passedBlocks(day, DATE, away).map((p) => p.occurrence.title)
-    expect(titles).not.toContain('Project work')
-    expect(titles).not.toContain('Morning workout')
+  it('a block logged anywhere drops off the card by itself', () => {
+    const logged = day.map((o) => (o.title === 'Admin & invoices' ? { ...o, status: 'skipped' as const } : o))
+    expect(missedBlocks(logged, away, DATE, at(12, 10)).map((o) => o.title)).toEqual(['Client check-in call'])
   })
 
-  it('a short absence with no block change lists nothing', () => {
-    expect(passedBlocks(day, DATE, { from: at(13, 5), to: at(13, 40) })).toEqual([])
+  it('a block going on when you came back joins the list once it is over', () => {
+    expect(missedBlocks(day, away, DATE, at(12, 40)).map((o) => o.title)).toContain('Lunch walk')
   })
 
-  it('shows a running timer and a skipped block as such', () => {
-    const more = [block('Call', '10:30', 30, { timerStartedAt: 1 }), block('Walk', '11:00', 20, { status: 'skipped' })]
-    expect(passedBlocks(more, DATE, away).map((p) => p.status)).toEqual(['running', 'skipped'])
+  it('reaches back over several days, oldest first, but not more than a week', () => {
+    const oct2 = { ...block('Old routine', '09:00', 30), date: '2026-10-02' }
+    const sep29 = { ...block('Too old', '09:00', 30), date: '2026-09-29' }
+    const longAway = [{ from: new Date(2026, 8, 28).getTime(), to: at(12, 10) }]
+    const list = missedBlocks([...day, oct2, sep29], longAway, DATE, at(12, 10))
+    expect(list[0]?.title).toBe('Old routine')
+    expect(list.map((o) => o.title)).not.toContain('Too old')
+    expect(oldestAwayDay(DATE)).toBe('2026-09-30')
   })
 
-  it('writes the span of the absence', () => {
+  it('shows at most 10, the most recent, and counts the rest', () => {
+    const many = Array.from({ length: 13 }, (_, n) => block(`Block ${n + 1}`, `${String(n + 6).padStart(2, '0')}:00`, 30))
+    const { shown, more } = cardList(many)
+    expect(shown).toHaveLength(10)
+    expect(more).toBe(3)
+    expect(shown[0]?.title).toBe('Block 4')
+    expect(shown[9]?.title).toBe('Block 13')
+  })
+
+  it('joins absences that overlap and keeps separate ones apart', () => {
+    expect(mergeAbsence([], away[0]!)).toEqual(away)
+    expect(mergeAbsence(away, { from: at(12), to: at(14) })).toEqual([{ from: at(10, 20), to: at(14) }])
+    expect(mergeAbsence(away, { from: at(15), to: at(16) })).toHaveLength(2)
+  })
+
+  it('forgets absences that are more than a week old', () => {
+    const old = { from: new Date(2026, 8, 20).getTime(), to: new Date(2026, 8, 21).getTime() }
+    expect(keepRecentAbsences([old, ...away], at(12, 10))).toEqual(away)
+  })
+
+  it('writes the span of the absences', () => {
     expect(absenceLabel(away, '12h')).toBe('10:20 am – 12:10 pm')
-    expect(absenceLabel({ from: at(21, 40, 5), to: at(7, 5) }, '12h')).toBe('Mon 9:40 pm – 7:05 am')
-  })
-
-  it('an absence over midnight counts today’s blocks from the start of the day', () => {
-    const overnight = { from: at(21, 40, 5), to: at(7, 0) }
-    expect(passedBlocks(day, DATE, overnight).map((p) => p.occurrence.title)).toEqual(['Morning workout'])
-  })
-
-  it('a second absence before the card was dealt with is joined onto the first', () => {
-    expect(mergeAbsence(null, away)).toEqual(away)
-    expect(mergeAbsence(away, { from: at(13), to: at(14) })).toEqual({ from: at(10, 20), to: at(14) })
+    expect(absenceLabel([{ from: at(21, 40, 5), to: at(7, 5) }], '12h')).toBe('Mon 9:40 pm – 7:05 am')
   })
 })
