@@ -1,6 +1,15 @@
 import { format } from 'date-fns'
 import { categoryColor, parseDateKey } from '../../data'
-import { coverageOf, coverageSummary, scoresSummary, skippedText, type SkippedTask, type TrendDay } from './trends'
+import {
+  coverageOf,
+  coverageSummary,
+  followedText,
+  scoresSummary,
+  skippedText,
+  type FollowedTask,
+  type SkippedTask,
+  type TrendDay,
+} from './trends'
 
 // The Trends charts (design/screens/Trends.html), drawn by hand: plain SVG rectangles and HTML
 // labels, no chart library. The bars stretch to the card's width, so they fit a 375 px screen, and
@@ -200,6 +209,44 @@ export function MostSkipped({ tasks }: { tasks: readonly SkippedTask[] }) {
                 <div aria-hidden="true" className="flex h-1.5 gap-0.5 overflow-hidden rounded-3 bg-line">
                   <span className="bg-missed" style={{ width: `${(t.skipped / t.days) * 100}%` }} />
                   {t.unknown > 0 && <span style={{ width: `${(t.unknown / t.days) * 100}%`, background: STRIPES }} />}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+export function MostFollowed({ tasks }: { tasks: readonly FollowedTask[] }) {
+  return (
+    <section aria-labelledby="followed-h" className="flex flex-col gap-1 rounded-24 border border-line bg-card px-4 pt-4 pb-1.5">
+      <h2 id="followed-h" className="m-0 mb-1 font-sans text-15 font-bold">
+        Most followed
+      </h2>
+      {tasks.length === 0 ? (
+        <p className="m-0 pb-3 text-13 font-medium text-muted">Nothing was followed in this period yet.</p>
+      ) : (
+        <ul className="m-0 list-none p-0">
+          {tasks.map((t) => {
+            const text = followedText(t)
+            return (
+              <li key={t.taskId} className="flex flex-col gap-[7px] border-t border-line py-2.5 first:border-t-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    aria-hidden="true"
+                    className="box-border size-2.5 shrink-0 rounded-5 border border-line-strong"
+                    style={{ background: categoryColor(t.color) }}
+                  />
+                  <span className="min-w-0 flex-1 text-14-5 font-bold break-words">{t.title}</span>
+                  <span className="text-12-5 font-semibold whitespace-nowrap text-muted">
+                    Followed <span className="font-extrabold text-primary">{text.followed}</span>
+                    {text.rest}
+                  </span>
+                </div>
+                <div aria-hidden="true" className="flex h-1.5 overflow-hidden rounded-3 bg-line">
+                  <span className="bg-followed" style={{ width: `${(t.followed / t.days) * 100}%` }} />
                 </div>
               </li>
             )

@@ -3,6 +3,11 @@
 ## Steps done
 
 - **Step 0:** computer set up (Git, Node, npm, GitHub CLI), Git repository created, first commit "Starter kit".
+- **Step 10 fix (Most followed, trend arrow):** a **Most followed** section above Most skipped (top 3 tasks by days
+  followed; a day counts when any of the planned time was kept, ties go to the task that kept more of its plan), and an
+  **arrow with a percentage** at the top right of the Day score card: this period's average Day score against the period
+  before (last week or last month), in percentage points, hidden when either period has fewer than 2 logged days. The
+  Day score card is a little wider so the label and arrow fit at 375 px. Branch `step-10-fix-trends`.
 - **Step 10:** the Trends screen. Tag: `step-10` (added after the merge).
   - **Trends** at `#/trends` (`TrendsPage.tsx`, from `Trends.html`), opened from the Calendar's Trends button, with a back
     link to the Calendar (the Calendar tab stays highlighted).
