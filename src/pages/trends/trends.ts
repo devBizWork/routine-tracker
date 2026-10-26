@@ -206,6 +206,72 @@ export function skippedText(task: SkippedTask): { skipped: string; rest: string 
   return { skipped: `${task.skipped} of ${task.days}`, rest: ` ${task.days === 1 ? 'day' : 'days'}` }
 }
 
+// ---- Most followed ----
+
+export interface FollowedTask {
+  taskId: string
+  title: string
+  color: CategoryId
+  /** Days the task had a counted block in the period. */
+  days: number
+  /** Days some of its planned time was kept (a task score above 0%; it does not have to be 100%). */
+  followed: number
+  /** The sum of its task scores over those days (0 to 1 each), used to break ties. */
+  scoreSum: number
+}
+
+/**
+ * The tasks followed on the most days in the period (top `limit`), counting only blocks that have
+ * started. A day counts when any of the planned time was kept. Ties go to the task that kept more of
+ * its plan, then by name. Tasks never followed are left out.
+ */
+export function mostFollowed(days: readonly TrendDay[], limit = 3): FollowedTask[] {
+  const byTask = new Map<string, FollowedTask>()
+  for (const day of days) {
+    if (!day.score) continue
+    for (const item of day.score.items) {
+      const b = item.block
+      const entry = byTask.get(b.taskId) ?? { taskId: b.taskId, title: b.title, color: b.color, days: 0, followed: 0, scoreSum: 0 }
+      entry.days += 1
+      if (item.score !== null && item.score > 0) {
+        entry.followed += 1
+        entry.scoreSum += item.score
+      }
+      entry.title = b.title
+      entry.color = b.color
+      byTask.set(b.taskId, entry)
+    }
+  }
+  return [...byTask.values()]
+    .filter((t) => t.followed > 0)
+    .sort((a, b) => b.followed - a.followed || b.scoreSum - a.scoreSum || a.title.localeCompare(b.title))
+    .slice(0, limit)
+}
+
+/** "Followed 6 of 7 days" */
+export function followedText(task: FollowedTask): { followed: string; rest: string } {
+  return { followed: `${task.followed} of ${task.days}`, rest: ` ${task.days === 1 ? 'day' : 'days'}` }
+}
+
+// ---- Up or down from the period before ----
+
+export interface TrendChange {
+  /** Percentage points, this period's average Day score minus the period before's. */
+  delta: number
+  direction: 'up' | 'down' | 'same'
+}
+
+/**
+ * How the average Day score moved from the previous period (last week or last month). null when
+ * either period has fewer than MIN_TREND_DAYS logged days, so there is nothing fair to compare.
+ */
+export function trendChange(current: TrendSummary, previous: TrendSummary): TrendChange | null {
+  if (current.avgFollowed === null || previous.avgFollowed === null) return null
+  if (current.loggedDays < MIN_TREND_DAYS || previous.loggedDays < MIN_TREND_DAYS) return null
+  const delta = current.avgFollowed - previous.avgFollowed
+  return { delta: Math.abs(delta), direction: delta > 0 ? 'up' : delta < 0 ? 'down' : 'same' }
+}
+
 // ---- Words for VoiceOver ----
 
 function dayName(date: DateKey): string {

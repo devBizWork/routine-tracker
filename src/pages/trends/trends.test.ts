@@ -6,15 +6,19 @@ import {
   coverageOf,
   coverageSummary,
   currentPeriod,
+  followedText,
   isCurrentPeriod,
   monthContaining,
+  mostFollowed,
   mostSkipped,
   scoresSummary,
   shiftPeriod,
   skippedText,
   summarize,
+  trendChange,
   trendDays,
   weekEndingOn,
+  type TrendSummary,
 } from './trends'
 
 let counter = 0
@@ -38,6 +42,28 @@ function block(date: string, taskId: string, title: string, start: string, minut
 
 const done = (start: string, end: string): Partial<Occurrence> => ({ status: 'done', actualStart: start, actualEnd: end })
 const skipped: Partial<Occurrence> = { status: 'skipped' }
+
+describe('up or down from the period before', () => {
+  const summary = (avgFollowed: number | null, loggedDays: number): TrendSummary => ({
+    dataDays: loggedDays,
+    loggedDays,
+    avgFollowed,
+    avgMissed: 0,
+    coverage: 0,
+  })
+
+  it('is the difference in percentage points', () => {
+    expect(trendChange(summary(61, 5), summary(55, 7))).toEqual({ delta: 6, direction: 'up' })
+    expect(trendChange(summary(50, 5), summary(54, 7))).toEqual({ delta: 4, direction: 'down' })
+    expect(trendChange(summary(50, 5), summary(50, 7))).toEqual({ delta: 0, direction: 'same' })
+  })
+
+  it('is not shown without enough logged days on both sides', () => {
+    expect(trendChange(summary(61, 5), summary(55, 1))).toBeNull()
+    expect(trendChange(summary(61, 1), summary(55, 5))).toBeNull()
+    expect(trendChange(summary(null, 0), summary(55, 5))).toBeNull()
+  })
+})
 
 describe('periods', () => {
   it('a week is the seven days ending on a day (design: Sep 30 – Oct 6)', () => {
@@ -161,6 +187,24 @@ describe('the days, the stat cards and Most skipped', () => {
     )
     const d = trendDays(weekEndingOn('2026-10-06'), { ...data, occurrences: many, created: new Set(many.map((o) => o.date)), firstDataDate: '2026-10-01' })
     expect(mostSkipped(d).map((t) => t.title)).toEqual(['D', 'C', 'B'])
+  })
+
+  it('Most followed counts a day when any of the planned time was kept, not only 100%', () => {
+    // Deep work: Oct 4 100%, Oct 5 50% (started late), Oct 6 so far 67%: followed 3 of 3 days.
+    const top = mostFollowed(days)
+    expect(top.map((t) => [t.title, t.followed, t.days])).toEqual([['Deep work', 3, 3]])
+    expect(followedText(top[0]!)).toEqual({ followed: '3 of 3', rest: ' days' })
+    // Lunch walk was only ever skipped, so it is not in the list.
+    expect(top.map((t) => t.title)).not.toContain('Lunch walk')
+  })
+
+  it('Most followed breaks ties by how much of the plan was kept', () => {
+    const tie = [
+      block('2026-10-05', 'a', 'Alpha', '08:00', 60, done('08:30', '09:00')), // 50%
+      block('2026-10-05', 'b', 'Beta', '10:00', 60, done('10:00', '11:00')), // 100%
+    ]
+    const d = trendDays(weekEndingOn('2026-10-06'), { ...data, occurrences: tie, created: new Set(['2026-10-05']) })
+    expect(mostFollowed(d).map((t) => t.title)).toEqual(['Beta', 'Alpha'])
   })
 
   it('fewer than two days of data', () => {
